@@ -157,6 +157,7 @@
     <string name="proxy_none_description">Direct connection, no proxy</string>
     <string name="failed_to_save_proxy_settings">Failed to save proxy settings</string>
     <string name="proxy_host_required">Proxy host is required</string>
+    <string name="proxy_host_invalid">Enter a valid hostname or IP address</string>
     <string name="invalid_proxy_port">Invalid proxy port</string>
     <string name="proxy_show_password">Show password</string>
     <string name="proxy_hide_password">Hide password</string>

@@ -154,6 +154,7 @@
     <string name="proxy_none_description">اتصال مباشر، بدون وكيل</string>
     <string name="failed_to_save_proxy_settings">فشل حفظ إعدادات الوكيل</string>
     <string name="proxy_host_required">المضيف مطلوب</string>
+    <string name="proxy_host_invalid">أدخل اسم مضيف أو عنوان IP صالحًا</string>
     <string name="invalid_proxy_port">منفذ الوكيل غير صالح</string>
     <string name="proxy_show_password">إظهار كلمة المرور</string>
     <string name="proxy_hide_password">إخفاء كلمة المرور</string>
