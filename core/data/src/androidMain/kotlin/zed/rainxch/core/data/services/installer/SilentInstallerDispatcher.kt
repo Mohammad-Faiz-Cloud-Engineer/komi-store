@@ -7,6 +7,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import zed.rainxch.core.data.services.dhizuku.DhizukuInstallerServiceImpl
 import zed.rainxch.core.data.services.dhizuku.DhizukuServiceManager
 import zed.rainxch.core.data.services.dhizuku.model.DhizukuStatus
 import zed.rainxch.core.data.services.root.RootServiceManager
@@ -148,7 +149,7 @@ class SilentInstallerDispatcher(
             val resolved =
                 if (
                     backend == Backend.DHIZUKU &&
-                    first == DHIZUKU_STATUS_PENDING_USER_ACTION &&
+                    first == DhizukuInstallerServiceImpl.STATUS_PENDING_USER_ACTION_REQUIRED &&
                     !installerAttribution.isNullOrBlank()
                 ) {
                     Logger.w(TAG) {
@@ -204,11 +205,6 @@ class SilentInstallerDispatcher(
             Backend.DEFAULT -> null
         }
 
-    private companion object {
-        // Mirror of `DhizukuInstallerServiceImpl.STATUS_PENDING_USER_ACTION_REQUIRED`
-        // surfaced across the AIDL boundary as an int.
-        const val DHIZUKU_STATUS_PENDING_USER_ACTION = -2
-    }
 
     private fun readApkIdentity(filePath: String): Pair<String?, Long> {
         val info = try {
