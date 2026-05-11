@@ -385,6 +385,7 @@
     <string name="proxy_none_description">Połączenie bezpośrednie, bez proxy</string>
     <string name="failed_to_save_proxy_settings">Nie udało się zapisać ustawień proxy</string>
     <string name="proxy_host_required">Host proxy jest wymagany</string>
+    <string name="proxy_host_invalid">Wprowadź prawidłową nazwę hosta lub adres IP</string>
     <string name="invalid_proxy_port">Nieprawidłowy port proxy</string>
     <string name="proxy_show_password">Pokaż hasło</string>
     <string name="proxy_hide_password">Ukryj hasło</string>

@@ -422,6 +422,7 @@
     <string name="proxy_none_description">সরাসরি সংযোগ, কোনো প্রক্সি নেই</string>
     <string name="failed_to_save_proxy_settings">প্রক্সি সেটিংস সংরক্ষণ করতে ব্যর্থ হয়েছে</string>
     <string name="proxy_host_required">প্রক্সি হোস্ট প্রয়োজন</string>
+    <string name="proxy_host_invalid">একটি বৈধ হোস্টনাম বা IP ঠিকানা লিখুন</string>
     <string name="invalid_proxy_port">অবৈধ প্রক্সি পোর্ট</string>
     <string name="proxy_show_password">পাসওয়ার্ড দেখান</string>
     <string name="proxy_hide_password">পাসওয়ার্ড লুকান</string>

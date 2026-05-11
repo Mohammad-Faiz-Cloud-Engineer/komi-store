@@ -421,6 +421,7 @@
     <string name="proxy_none_description">सीधा कनेक्शन, कोई प्रॉक्सी नहीं</string>
     <string name="failed_to_save_proxy_settings">प्रॉक्सी सेटिंग्स सहेजने में विफल</string>
     <string name="proxy_host_required">प्रॉक्सी होस्ट आवश्यक है</string>
+    <string name="proxy_host_invalid">मान्य होस्टनाम या IP पता दर्ज करें</string>
     <string name="invalid_proxy_port">अमान्य प्रॉक्सी पोर्ट</string>
     <string name="proxy_show_password">पासवर्ड दिखाएँ</string>
     <string name="proxy_hide_password">पासवर्ड छुपाएँ</string>

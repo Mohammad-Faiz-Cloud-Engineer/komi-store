@@ -387,6 +387,7 @@
     <string name="proxy_none_description">Connexion directe, pas de proxy</string>
     <string name="failed_to_save_proxy_settings">Échec de l'enregistrement des paramètres du proxy</string>
     <string name="proxy_host_required">L’hôte du proxy est requis</string>
+    <string name="proxy_host_invalid">Saisissez un nom d’hôte ou une adresse IP valide</string>
     <string name="invalid_proxy_port">Port proxy invalide</string>
     <string name="proxy_show_password">Afficher le mot de passe</string>
     <string name="proxy_hide_password">Masquer le mot de passe</string>

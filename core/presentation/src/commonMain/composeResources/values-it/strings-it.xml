@@ -422,7 +422,8 @@
     <string name="proxy_port_error">La porta deve essere 1–65535</string>
     <string name="proxy_none_description">Connessione diretta, nessun proxy</string>
     <string name="failed_to_save_proxy_settings">Impossibile salvare le impostazioni del proxy</string>
-    <string name="proxy_host_required">L'host del proxy è obbligatorio</string>
+    <string name="proxy_host_required">L\'host del proxy è obbligatorio</string>
+    <string name="proxy_host_invalid">Inserisci un nome host o indirizzo IP valido</string>
     <string name="invalid_proxy_port">Porta proxy non valida</string>
     <string name="proxy_show_password">Mostra password</string>
     <string name="proxy_hide_password">Nascondi password</string>

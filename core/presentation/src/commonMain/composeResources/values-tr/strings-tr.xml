@@ -419,6 +419,7 @@
     <string name="proxy_none_description">Doğrudan bağlantı, proxy yok</string>
     <string name="failed_to_save_proxy_settings">Proxy ayarları kaydedilemedi</string>
     <string name="proxy_host_required">Proxy ana bilgisayarı gerekli</string>
+    <string name="proxy_host_invalid">Geçerli bir ana bilgisayar adı veya IP adresi girin</string>
     <string name="invalid_proxy_port">Geçersiz proxy portu</string>
     <string name="proxy_show_password">Şifreyi göster</string>
     <string name="proxy_hide_password">Şifreyi gizle</string>

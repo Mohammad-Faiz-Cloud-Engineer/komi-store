@@ -387,6 +387,7 @@
     <string name="proxy_none_description">Прямое подключение, без прокси</string>
     <string name="failed_to_save_proxy_settings">Не удалось сохранить настройки прокси</string>
     <string name="proxy_host_required">Требуется хост прокси</string>
+    <string name="proxy_host_invalid">Введите корректное имя хоста или IP-адрес</string>
     <string name="invalid_proxy_port">Недопустимый порт прокси</string>
     <string name="proxy_show_password">Показать пароль</string>
     <string name="proxy_hide_password">Скрыть пароль</string>

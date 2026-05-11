@@ -420,6 +420,7 @@
     <string name="proxy_none_description">직접 연결, 프록시 없음</string>
     <string name="failed_to_save_proxy_settings">프록시 설정을 저장하지 못했습니다</string>
     <string name="proxy_host_required">프록시 호스트가 필요합니다</string>
+    <string name="proxy_host_invalid">유효한 호스트 이름 또는 IP 주소를 입력하세요</string>
     <string name="invalid_proxy_port">잘못된 프록시 포트</string>
     <string name="proxy_show_password">비밀번호 표시</string>
     <string name="proxy_hide_password">비밀번호 숨기기</string>
