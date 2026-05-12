@@ -229,6 +229,30 @@ fun SearchScreen(
         }
     }
 
+    // Auto-paginate while every loaded repo is filtered out by the global
+    // "Hide seen" tweak. The grid is empty → scroll-based shouldLoadMore can
+    // never fire (totalItemsCount == 0), so without this the user is stranded
+    // on a blank screen with no way to reach page 2+ where unseen repos may
+    // live. Stops once hasMorePages flips false; the banner then takes over.
+    LaunchedEffect(
+        state.repositories.size,
+        state.visibleRepos.size,
+        state.isHideSeenEnabled,
+        state.hasMorePages,
+        state.isLoadingMore,
+        state.isLoading,
+    ) {
+        if (state.repositories.isNotEmpty() &&
+            state.visibleRepos.isEmpty() &&
+            state.isHideSeenEnabled &&
+            state.hasMorePages &&
+            !state.isLoadingMore &&
+            !state.isLoading
+        ) {
+            currentOnAction(SearchAction.LoadMore)
+        }
+    }
+
     LaunchedEffect(listState.layoutInfo.totalItemsCount, listState.layoutInfo.viewportEndOffset) {
         val layoutInfo = listState.layoutInfo
         val visibleItems = layoutInfo.visibleItemsInfo
@@ -557,6 +581,71 @@ fun SearchScreen(
                                     onExplore = { onAction(SearchAction.ExploreFromGithub) },
                                 )
                             }
+                        }
+                    }
+                }
+
+                // Auto-paginate is fetching the next page in the background
+                // because every loaded repo is filtered out. Without an
+                // explicit indicator the content area is blank: the top-level
+                // spinner only renders while repositories.isEmpty(), and the
+                // in-grid load-more spinner is unreachable because the grid
+                // itself only renders when visibleRepos is non-empty.
+                if (state.repositories.isNotEmpty() &&
+                    state.visibleRepos.isEmpty() &&
+                    state.isHideSeenEnabled &&
+                    state.hasMorePages
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            CircularProgressIndicator()
+
+                            Spacer(Modifier.height(8.dp))
+
+                            Text(
+                                text = stringResource(Res.string.searching_for_unseen_repos),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.outline,
+                            )
+                        }
+                    }
+                }
+
+                // All currently loaded API hits filtered out by the global
+                // "Hide seen" tweak AND no further pages remain — results
+                // counter still shows the raw total, so without this banner
+                // the user sees "N results found" above an empty grid and
+                // assumes the app is broken (issue #574). `hasMorePages` is
+                // required because the scroll-based pagination above stalls
+                // when totalItemsCount == 0, so we surface the banner only
+                // when there is genuinely nothing more to fetch. While
+                // hasMorePages is true, the auto-paginate effect below pulls
+                // the next page in the background.
+                if (state.repositories.isNotEmpty() &&
+                    state.visibleRepos.isEmpty() &&
+                    state.isHideSeenEnabled &&
+                    !state.hasMorePages
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = stringResource(Res.string.search_results_hidden_by_seen_filter),
+                            )
+
+                            Spacer(Modifier.height(8.dp))
+
+                            GithubStoreButton(
+                                text = stringResource(Res.string.show_all_results),
+                                onClick = {
+                                    onAction(SearchAction.OnDisableHideSeenForResults)
+                                },
+                            )
                         }
                     }
                 }
