@@ -18,7 +18,8 @@
         "Uninstalled apps now disappear from the tracked list right away, even when removed from system Settings.",
         "Better version detection — releases that share a numeric version but ship distinct build artifacts are no longer falsely flagged as 'already installed'.",
         "Updating multiple apps in a row now works reliably — installs serialize so each one shows the correct APK in the system dialog. Apps screen versions also stay in sync after every install.",
-        "Auto-update picks the right APK when a release ships both a regular and an F-Droid variant — no more accidentally installing a sibling app with a different package id."
+        "Auto-update picks the right APK when a release ships both a regular and an F-Droid variant — no more accidentally installing a sibling app with a different package id.",
+        "Search no longer shows a result count over an empty list — when 'Hide seen' filters out every hit, the screen now explains why and offers a one-tap reset."
       ]
     },
     {
