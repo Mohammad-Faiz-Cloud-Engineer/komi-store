@@ -113,3 +113,11 @@ Kotlin 2.3.10, Compose Multiplatform 1.10.3, Ktor 3.4.0, Room 2.8.4, Koin 4.1.1,
 - Source sets: `commonMain` shared, `androidMain`, `jvmMain`
 - **No KDoc, no inline comments** unless the user explicitly asks. No function/class docs. Inline only for non-obvious invariants, tricky concurrency, workarounds. Applies globally.
 - Feature-specific guidance in each `feature/*/CLAUDE.md`
+
+## Approach
+- Read existing files before writing. Don't re-read unless changed.
+- Thorough in reasoning, concise in output.
+- Skip files over 100KB unless required.
+- No sycophantic openers or closing fluff.
+- No emojis or em-dashes.
+- Do not guess APIs, versions, flags, commit SHAs, or package names. Verify by reading code or docs before asserting, researching if necessary.
