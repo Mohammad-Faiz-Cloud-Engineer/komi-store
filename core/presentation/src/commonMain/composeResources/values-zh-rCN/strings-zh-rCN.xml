@@ -715,6 +715,15 @@
     <string name="installer_category_vendor_store">厂商应用商店</string>
     <string name="installer_category_play_store">Play 商店</string>
     <string name="installer_category_system_update">系统更新</string>
+    <string name="link_smart_search_title">查找匹配仓库</string>
+    <string name="link_smart_search_searching">正在 GitHub 上查找匹配…</string>
+    <string name="link_smart_search_no_matches">未找到自动匹配。</string>
+    <string name="link_smart_search_failed">无法搜索匹配项。</string>
+    <string name="link_smart_search_enter_manually">手动输入 URL</string>
+    <string name="match_source_manifest">清单</string>
+    <string name="match_source_fingerprint">签名</string>
+    <string name="match_source_search">搜索</string>
+    <string name="match_source_manual">手动</string>
     <string name="pat_sheet_title">使用 Personal Access Token 登录</string>
     <string name="pat_sheet_description">在能访问 GitHub 的任何设备上创建 Personal Access Token（classic 或 fine-grained），然后粘贴到下方。需要对仓库和个人资料的读取权限。</string>
     <string name="pat_open_settings">打开 GitHub 令牌设置</string>

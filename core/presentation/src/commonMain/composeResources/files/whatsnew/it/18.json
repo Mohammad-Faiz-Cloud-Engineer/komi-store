@@ -27,7 +27,8 @@
     {
       "type": "IMPROVED",
       "bullets": [
-        "Collegamento manuale di app — ordinate per origine di installazione (F-Droid / Obtainium per primi, Play Store e aggiornamenti di sistema per ultimi) con un chip che mostra l'origine di ogni app."
+        "Collegamento manuale di app — ordinate per origine di installazione (F-Droid / Obtainium per primi, Play Store e aggiornamenti di sistema per ultimi) con un chip che mostra l'origine di ogni app.",
+        "Il collegamento manuale ora suggerisce automaticamente repo GitHub corrispondenti — scegli un'app, ottieni candidati classificati, tocca per collegare. L'inserimento manuale dell'URL resta disponibile."
       ]
     }
   ]

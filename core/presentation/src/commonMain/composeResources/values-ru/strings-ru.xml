@@ -721,6 +721,15 @@
     <string name="installer_category_vendor_store">Магазин производителя</string>
     <string name="installer_category_play_store">Play Маркет</string>
     <string name="installer_category_system_update">Системное обновление</string>
+    <string name="link_smart_search_title">Найти подходящий репозиторий</string>
+    <string name="link_smart_search_searching">Поиск совпадения на GitHub…</string>
+    <string name="link_smart_search_no_matches">Автоматических совпадений не найдено.</string>
+    <string name="link_smart_search_failed">Не удалось выполнить поиск совпадений.</string>
+    <string name="link_smart_search_enter_manually">Ввести URL вручную</string>
+    <string name="match_source_manifest">Манифест</string>
+    <string name="match_source_fingerprint">Подпись</string>
+    <string name="match_source_search">Поиск</string>
+    <string name="match_source_manual">Вручную</string>
     <string name="pat_sheet_title">Вход с Personal Access Token</string>
     <string name="pat_sheet_description">Создайте Personal Access Token (classic или fine-grained) на устройстве, где доступен GitHub, и вставьте его ниже. Требуется доступ на чтение к репозиториям и вашему профилю.</string>
     <string name="pat_open_settings">Открыть настройки токенов GitHub</string>

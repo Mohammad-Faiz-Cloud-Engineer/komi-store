@@ -27,7 +27,8 @@
     {
       "type": "IMPROVED",
       "bullets": [
-        "Ręczne powiązywanie aplikacji — sortowane wg źródła instalatora (F-Droid / Obtainium na początku, Play Store i aktualizacje systemu na końcu) z chipem pokazującym źródło każdej aplikacji."
+        "Ręczne powiązywanie aplikacji — sortowane wg źródła instalatora (F-Droid / Obtainium na początku, Play Store i aktualizacje systemu na końcu) z chipem pokazującym źródło każdej aplikacji.",
+        "Ręczne powiązanie automatycznie proponuje pasujące repozytoria GitHub — wybierz aplikację, otrzymaj uszeregowanych kandydatów, dotknij, aby powiązać. Ręczne wpisanie URL nadal dostępne."
       ]
     }
   ]

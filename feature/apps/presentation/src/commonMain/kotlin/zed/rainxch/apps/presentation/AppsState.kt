@@ -13,6 +13,7 @@ import zed.rainxch.apps.presentation.model.InstalledAppUi
 import zed.rainxch.apps.presentation.model.UpdateAllProgress
 import zed.rainxch.core.domain.model.DeviceApp
 import zed.rainxch.core.domain.model.GithubAsset
+import zed.rainxch.core.domain.system.RepoMatchSuggestion
 
 data class AppsState(
     val apps: ImmutableList<AppItem> = persistentListOf(),
@@ -39,6 +40,9 @@ data class AppsState(
     val deviceAppSearchQuery: String = "",
     val selectedDeviceApp: DeviceAppUi? = null,
     val repoUrl: String = "",
+    val linkSearchLoading: Boolean = false,
+    val linkSuggestions: ImmutableList<RepoMatchSuggestion> = persistentListOf(),
+    val linkSearchError: String? = null,
     val isValidatingRepo: Boolean = false,
     val repoValidationError: String? = null,
     val linkValidationStatus: String? = null,
@@ -131,6 +135,7 @@ data class AppsState(
 
 enum class LinkStep {
     PickApp,
+    SmartMatch,
     EnterUrl,
     PickAsset,
 }

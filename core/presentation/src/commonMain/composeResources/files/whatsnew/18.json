@@ -27,7 +27,8 @@
     {
       "type": "IMPROVED",
       "bullets": [
-        "Manually linking apps — sorted by installer source (F-Droid / Obtainium first, Play Store and system updates last) with a chip showing each app's source."
+        "Manually linking apps — sorted by installer source (F-Droid / Obtainium first, Play Store and system updates last) with a chip showing each app's source.",
+        "Manual link now suggests matching GitHub repos automatically — pick an app, get ranked candidates, tap to link. Manual URL entry still available."
       ]
     }
   ]
