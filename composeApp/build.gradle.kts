@@ -99,6 +99,7 @@ kotlin {
                 implementation(libs.koin.compose.viewmodel)
 
                 implementation(libs.slf4j.simple)
+                implementation(libs.jna.platform)
             }
         }
     }
