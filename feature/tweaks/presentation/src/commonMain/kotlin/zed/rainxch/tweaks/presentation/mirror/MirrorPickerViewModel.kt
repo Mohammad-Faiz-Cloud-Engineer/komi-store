@@ -21,6 +21,7 @@ import zed.rainxch.githubstore.core.presentation.res.Res
 import zed.rainxch.githubstore.core.presentation.res.error_unknown
 import zed.rainxch.githubstore.core.presentation.res.mirror_custom_validation_https
 import zed.rainxch.githubstore.core.presentation.res.mirror_custom_validation_template
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.TimeSource
 
 class MirrorPickerViewModel(
@@ -53,14 +54,22 @@ class MirrorPickerViewModel(
 
     fun onAction(action: MirrorPickerAction) {
         when (action) {
-            MirrorPickerAction.OnNavigateBack -> {   }
+            MirrorPickerAction.OnNavigateBack -> {}
             is MirrorPickerAction.OnSelectMirror -> selectMirror(action.mirror)
             MirrorPickerAction.OnCustomMirrorClicked ->
-                _state.update { it.copy(isCustomDialogVisible = true, customDraft = "", customDraftError = null) }
+                _state.update {
+                    it.copy(
+                        isCustomDialogVisible = true,
+                        customDraft = "",
+                        customDraftError = null
+                    )
+                }
+
             is MirrorPickerAction.OnCustomDraftChanged -> updateDraft(action.value)
             MirrorPickerAction.OnCustomMirrorConfirm -> confirmCustom()
             MirrorPickerAction.OnCustomMirrorDismiss ->
                 _state.update { it.copy(isCustomDialogVisible = false) }
+
             MirrorPickerAction.OnTestConnection -> runTest()
             MirrorPickerAction.OnRefreshCatalog -> refresh()
             MirrorPickerAction.OnDeployYourOwnClicked ->
@@ -72,8 +81,9 @@ class MirrorPickerViewModel(
 
     private fun selectMirror(mirror: MirrorConfig) {
         viewModelScope.launch {
-            val pref =
-                if (mirror.id == "direct") MirrorPreference.Direct else MirrorPreference.Selected(mirror.id)
+            val pref = if (mirror.id == "direct") {
+                MirrorPreference.Direct
+            } else MirrorPreference.Selected(mirror.id)
             mirrorRepository.setPreference(pref)
         }
     }
@@ -95,44 +105,67 @@ class MirrorPickerViewModel(
         if (draft.isBlank() || error != null) return
         viewModelScope.launch {
             mirrorRepository.setPreference(MirrorPreference.Custom(draft))
-            _state.update { it.copy(isCustomDialogVisible = false, customDraft = "", customDraftError = null) }
+            _state.update {
+                it.copy(
+                    isCustomDialogVisible = false,
+                    customDraft = "",
+                    customDraftError = null
+                )
+            }
         }
     }
 
     private fun runTest() {
         viewModelScope.launch {
             _state.update { it.copy(isTesting = true, testResult = null) }
-            val pref = state.value.preference
             val template =
-                when (pref) {
+                when (val pref = state.value.preference) {
                     MirrorPreference.Direct -> null
                     is MirrorPreference.Custom -> pref.template
                     is MirrorPreference.Selected ->
                         state.value.mirrors.firstOrNull { it.id == pref.id }?.urlTemplate
                 }
-            val probeUrl = "https://raw.githubusercontent.com/octocat/Hello-World/master/README"
-            val targetUrl =
-                if (template == null) probeUrl
-                else template.replace("{url}", probeUrl)
-            val result =
-                withTimeoutOrNull(5_000L) {
-                    runCatching {
-                        val mark = TimeSource.Monotonic.markNow()
-                        val response = testHttpClient.get(targetUrl)
-                        val elapsedMs = mark.elapsedNow().inWholeMilliseconds
-                        response.status.value to elapsedMs
-                    }
+            val wholeUrlProbe =
+                "https://raw.githubusercontent.com/octocat/Hello-World/master/README"
+
+            val targetUrl = when {
+                template == null -> wholeUrlProbe
+                template.contains("{url}") -> template.replace("{url}", wholeUrlProbe)
+                template.contains("{owner}") -> template
+                    .replace("{owner}", "cli")
+                    .replace("{repo}", "cli")
+                    .replace("{ref}", "v2.40.0")
+                    .replace("{path}", "LICENSE")
+
+                else -> wholeUrlProbe
+            }
+
+            val result = withTimeoutOrNull(5_000L.milliseconds) {
+                runCatching {
+                    val mark = TimeSource.Monotonic.markNow()
+                    val response = testHttpClient.get(targetUrl)
+                    val elapsedMs = mark.elapsedNow().inWholeMilliseconds
+                    response.status.value to elapsedMs
                 }
-            val testResult: TestResult =
-                when {
-                    result == null -> TestResult.Timeout
-                    result.isSuccess -> {
-                        val (status, ms) = result.getOrThrow()
-                        if (status in 200..299) TestResult.Success(ms) else TestResult.HttpError(status)
-                    }
-                    result.exceptionOrNull() is UnresolvedAddressException -> TestResult.DnsFailure
-                    else -> TestResult.Other(result.exceptionOrNull()?.message ?: getString(Res.string.error_unknown))
+            }
+
+            val testResult: TestResult = when {
+                result == null -> TestResult.Timeout
+
+                result.isSuccess -> {
+                    val (status, ms) = result.getOrThrow()
+                    if (status in 200..299) {
+                        TestResult.Success(ms)
+                    } else TestResult.HttpError(status)
                 }
+
+                result.exceptionOrNull() is UnresolvedAddressException -> TestResult.DnsFailure
+
+                else -> TestResult.Other(
+                    result.exceptionOrNull()?.message ?: getString(Res.string.error_unknown)
+                )
+            }
+
             _state.update { it.copy(isTesting = false, testResult = testResult) }
         }
     }
