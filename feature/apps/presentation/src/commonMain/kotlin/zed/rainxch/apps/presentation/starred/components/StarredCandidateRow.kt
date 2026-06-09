@@ -30,10 +30,11 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.skydoves.landscapist.coil3.CoilImage
+import zed.rainxch.core.presentation.components.GitHubStoreImage
 import org.jetbrains.compose.resources.stringResource
 import zed.rainxch.apps.presentation.starred.StarredCandidateUi
 import zed.rainxch.core.presentation.components.ExpressiveCard
+import zed.rainxch.core.presentation.utils.formatCompactCount
 import zed.rainxch.githubstore.core.presentation.res.Res
 import zed.rainxch.githubstore.core.presentation.res.starred_picker_already_tracked
 import zed.rainxch.githubstore.core.presentation.res.starred_picker_apk_badge
@@ -67,7 +68,7 @@ fun StarredCandidateRow(
                     .size(40.dp)
                     .clip(CircleShape),
             ) {
-                CoilImage(
+                GitHubStoreImage(
                     imageModel = { candidate.ownerAvatarUrl },
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -82,6 +83,7 @@ fun StarredCandidateRow(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
+
                 if (!candidate.description.isNullOrBlank()) {
                     Text(
                         text = candidate.description,
@@ -91,7 +93,9 @@ fun StarredCandidateRow(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
+
                 Spacer(Modifier.height(2.dp))
+
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -103,13 +107,16 @@ fun StarredCandidateRow(
                             tint = MaterialTheme.colorScheme.tertiary,
                             modifier = Modifier.size(14.dp),
                         )
+
                         Spacer(Modifier.width(2.dp))
+
                         Text(
-                            text = formatStars(candidate.stargazersCount),
+                            text = formatCompactCount(candidate.stargazersCount),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
+
                     candidate.latestReleaseTag?.let { tag ->
                         Text(
                             text = tag,
@@ -129,6 +136,7 @@ fun StarredCandidateRow(
                     color = MaterialTheme.colorScheme.primary,
                 )
             }
+
             if (candidate.isAlreadyTracked) {
                 Badge(
                     icon = Icons.Outlined.CheckCircle,
@@ -150,13 +158,9 @@ private fun Badge(icon: androidx.compose.ui.graphics.vector.ImageVector, label: 
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(imageVector = icon, contentDescription = null, tint = color, modifier = Modifier.size(14.dp))
+
         Spacer(Modifier.width(4.dp))
+
         Text(text = label, style = MaterialTheme.typography.labelSmall, color = color)
     }
-}
-
-private fun formatStars(count: Int): String = when {
-    count >= 1_000_000 -> "${count / 100_000 / 10.0}M"
-    count >= 1_000 -> "${count / 100 / 10.0}k"
-    else -> count.toString()
 }

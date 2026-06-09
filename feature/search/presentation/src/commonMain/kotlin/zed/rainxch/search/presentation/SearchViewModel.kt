@@ -19,10 +19,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
 import zed.rainxch.core.domain.logging.GitHubStoreLogger
-import zed.rainxch.core.domain.model.Platform
-import zed.rainxch.core.domain.model.RateLimitException
-import zed.rainxch.core.domain.model.hasActualUpdate
-import zed.rainxch.core.domain.model.isReallyInstalled
+import zed.rainxch.core.domain.model.system.Platform
+import zed.rainxch.core.domain.model.error.RateLimitException
+import zed.rainxch.core.domain.model.account.github.GithubRepoSummary
+import zed.rainxch.core.domain.model.installation.hasActualUpdate
+import zed.rainxch.core.domain.model.installation.isReallyInstalled
 import zed.rainxch.core.domain.repository.FavouritesRepository
 import zed.rainxch.core.domain.repository.HiddenReposRepository
 import zed.rainxch.core.domain.repository.InstalledAppsRepository
@@ -32,8 +33,8 @@ import zed.rainxch.core.domain.repository.StarredRepository
 import zed.rainxch.core.domain.repository.TweaksRepository
 import zed.rainxch.core.domain.repository.UserSessionRepository
 import zed.rainxch.core.domain.use_cases.SyncInstalledAppsUseCase
-import zed.rainxch.core.domain.utils.ClipboardHelper
-import zed.rainxch.core.domain.utils.ShareManager
+import zed.rainxch.core.domain.helpers.ClipboardHelper
+import zed.rainxch.core.domain.helpers.ShareManager
 import zed.rainxch.core.presentation.model.DiscoveryRepositoryUi
 import zed.rainxch.core.presentation.utils.toUi
 import zed.rainxch.domain.repository.SearchRepository
@@ -222,6 +223,8 @@ class SearchViewModel(
                 if (result.isFailure) {
                     logger.warn("Initial sync had issues: ${result.exceptionOrNull()?.message}")
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 logger.error("Initial sync failed: ${e.message}")
             }
@@ -259,6 +262,8 @@ class SearchViewModel(
                         )
                     }
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 logger.debug("Failed to read clipboard: ${e.message}")
             }
@@ -374,145 +379,144 @@ class SearchViewModel(
             }
         }
 
-        currentSearchJob =
-            viewModelScope.launch {
-                _state.update {
-                    it.copy(
-                        isLoading = isInitial,
-                        isLoadingMore = !isInitial,
-                        errorMessage = null,
-                        repositories =
-                            if (isInitial) {
-                                persistentListOf()
-                            } else {
-                                it.repositories
-                            },
-                        totalCount = if (isInitial) null else it.totalCount,
-                        passthroughAttempted =
-                            if (isInitial) null else it.passthroughAttempted,
-                    )
-                }
+        currentSearchJob = viewModelScope.launch {
+            _state.update {
+                it.copy(
+                    isLoading = isInitial,
+                    isLoadingMore = !isInitial,
+                    errorMessage = null,
+                    repositories =
+                        if (isInitial) {
+                            persistentListOf()
+                        } else {
+                            it.repositories
+                        },
+                    totalCount = if (isInitial) null else it.totalCount,
+                    passthroughAttempted =
+                        if (isInitial) null else it.passthroughAttempted,
+                )
+            }
 
-                try {
-                    val installedMap =
-                        installedAppsRepository
-                            .getAllInstalledApps()
-                            .first()
-                            .groupBy { it.repoId }
-                    val favoritesMap =
-                        favouritesRepository
-                            .getAllFavorites()
-                            .first()
-                            .associateBy { it.repoId }
-                    val starredReposMap =
-                        starredRepository
-                            .getAllStarred()
-                            .first()
-                            .associateBy { it.repoId }
+            try {
+                val installedMap =
+                    installedAppsRepository
+                        .getAllInstalledApps()
+                        .first()
+                        .groupBy { it.repoId }
+                val favoritesMap =
+                    favouritesRepository
+                        .getAllFavorites()
+                        .first()
+                        .associateBy { it.repoId }
+                val starredReposMap =
+                    starredRepository
+                        .getAllStarred()
+                        .first()
+                        .associateBy { it.repoId }
 
-                    searchRepository
-                        .searchRepositories(
-                            query = _state.value.query,
-                            platform = _state.value.selectedSearchPlatform.toDomain(),
-                            language = _state.value.selectedLanguage.toDomain(),
-                            sortBy = _state.value.selectedSortBy.toDomain(),
-                            sortOrder = _state.value.selectedSortOrder.toDomain(),
-                            page = currentPage,
-                            source = _state.value.selectedSource.toDomain(),
-                        ).collect { paginatedRepos ->
-                            currentPage = paginatedRepos.nextPageIndex
+                searchRepository
+                    .searchRepositories(
+                        query = _state.value.query,
+                        platform = _state.value.selectedSearchPlatform.toDomain(),
+                        language = _state.value.selectedLanguage.toDomain(),
+                        sortBy = _state.value.selectedSortBy.toDomain(),
+                        sortOrder = _state.value.selectedSortOrder.toDomain(),
+                        page = currentPage,
+                        source = _state.value.selectedSource.toDomain(),
+                    ).collect { paginatedRepos ->
+                        currentPage = paginatedRepos.nextPageIndex
 
-                            val seenIds = _state.value.seenRepoIds
-                            val currentLogin = currentUserLogin
+                        val seenIds = _state.value.seenRepoIds
+                        val currentLogin = currentUserLogin
 
-                            val newReposWithStatus =
-                                paginatedRepos.repos.map { repo ->
-                                    val apps = installedMap[repo.id].orEmpty()
-                                    val favourite = favoritesMap[repo.id]
-                                    val starred = starredReposMap[repo.id]
+                        val newReposWithStatus =
+                            paginatedRepos.repos.map { repo ->
+                                val apps = installedMap[repo.id].orEmpty()
+                                val favourite = favoritesMap[repo.id]
+                                val starred = starredReposMap[repo.id]
 
-                                    DiscoveryRepositoryUi(
-                                        isInstalled = apps.any { it.isReallyInstalled() },
-                                        isFavourite = favourite != null,
-                                        isStarred = starred != null,
-                                        isSeen = repo.id in seenIds,
-                                        isCurrentUserOwner =
-                                            currentLogin != null &&
-                                                    repo.owner.login.equals(
-                                                        currentLogin,
-                                                        ignoreCase = true
-                                                    ),
-                                        isUpdateAvailable = apps.any { it.hasActualUpdate() },
-                                        repository = repo.toUi(),
-                                    )
-                                }
-
-                            _state.update { currentState ->
-                                val mergedMap = LinkedHashMap<Long, DiscoveryRepositoryUi>()
-
-                                currentState.repositories.forEach { r ->
-                                    mergedMap[r.repository.id] = r
-                                }
-
-                                newReposWithStatus.forEach { r ->
-                                    val existing = mergedMap[r.repository.id]
-                                    if (existing == null) {
-                                        mergedMap[r.repository.id] = r
-                                    } else {
-                                        mergedMap[r.repository.id] =
-                                            existing.copy(
-                                                isInstalled = r.isInstalled,
-                                                isUpdateAvailable = r.isUpdateAvailable,
-                                                isFavourite = r.isFavourite,
-                                                isStarred = r.isStarred,
-                                                repository = r.repository,
-                                            )
-                                    }
-                                }
-
-                                val allRepos = mergedMap.values.toImmutableList()
-
-                                currentState.copy(
-                                    repositories = allRepos,
-                                    hasMorePages = paginatedRepos.hasMore,
-                                    totalCount = allRepos.size,
-                                    errorMessage = null,
-                                    passthroughAttempted = paginatedRepos.passthroughAttempted,
+                                DiscoveryRepositoryUi(
+                                    isInstalled = apps.any { it.isReallyInstalled() },
+                                    isFavourite = favourite != null,
+                                    isStarred = starred != null,
+                                    isSeen = repo.id in seenIds,
+                                    isCurrentUserOwner =
+                                        currentLogin != null &&
+                                                repo.owner.login.equals(
+                                                    currentLogin,
+                                                    ignoreCase = true
+                                                ),
+                                    isUpdateAvailable = apps.any { it.hasActualUpdate() },
+                                    repository = repo.toUi(),
                                 )
                             }
-                        }
 
-                    _state.update {
-                        it.copy(isLoading = false, isLoadingMore = false)
+                        _state.update { currentState ->
+                            val mergedMap = LinkedHashMap<Long, DiscoveryRepositoryUi>()
+
+                            currentState.repositories.forEach { r ->
+                                mergedMap[r.repository.id] = r
+                            }
+
+                            newReposWithStatus.forEach { r ->
+                                val existing = mergedMap[r.repository.id]
+                                if (existing == null) {
+                                    mergedMap[r.repository.id] = r
+                                } else {
+                                    mergedMap[r.repository.id] =
+                                        existing.copy(
+                                            isInstalled = r.isInstalled,
+                                            isUpdateAvailable = r.isUpdateAvailable,
+                                            isFavourite = r.isFavourite,
+                                            isStarred = r.isStarred,
+                                            repository = r.repository,
+                                        )
+                                }
+                            }
+
+                            val allRepos = mergedMap.values.toImmutableList()
+
+                            currentState.copy(
+                                repositories = allRepos,
+                                hasMorePages = paginatedRepos.hasMore,
+                                totalCount = allRepos.size,
+                                errorMessage = null,
+                                passthroughAttempted = paginatedRepos.passthroughAttempted,
+                            )
+                        }
                     }
-                } catch (e: RateLimitException) {
-                    logger.debug("Rate limit exceeded: ${e.message}")
-                    val seconds = e.rateLimitInfo.timeUntilReset().inWholeSeconds
-                    val message = if (seconds > 0L) {
-                        getString(Res.string.rate_limit_exceeded_retry_in, seconds.toInt())
-                    } else {
-                        getString(Res.string.rate_limit_exceeded)
-                    }
-                    _state.update {
-                        it.copy(
-                            isLoading = false,
-                            isLoadingMore = false,
-                            errorMessage = message,
-                        )
-                    }
-                } catch (e: CancellationException) {
-                    logger.debug("Search cancelled (expected): ${e.message}")
-                } catch (e: Exception) {
-                    logger.error("Search failed: ${e.message}")
-                    _state.update {
-                        it.copy(
-                            isLoading = false,
-                            isLoadingMore = false,
-                            errorMessage = e.message ?: getString(Res.string.search_failed),
-                        )
-                    }
+
+                _state.update {
+                    it.copy(isLoading = false, isLoadingMore = false)
+                }
+            } catch (e: RateLimitException) {
+                logger.debug("Rate limit exceeded: ${e.message}")
+                val seconds = e.rateLimitInfo.timeUntilReset().inWholeSeconds
+                val message = if (seconds > 0L) {
+                    getString(Res.string.rate_limit_exceeded_retry_in, seconds.toInt())
+                } else {
+                    getString(Res.string.rate_limit_exceeded)
+                }
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        isLoadingMore = false,
+                        errorMessage = message,
+                    )
+                }
+            } catch (e: CancellationException) {
+                logger.debug("Search cancelled (expected): ${e.message}")
+            } catch (e: Exception) {
+                logger.error("Search failed: ${e.message}")
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        isLoadingMore = false,
+                        errorMessage = e.message ?: getString(Res.string.search_failed),
+                    )
                 }
             }
+        }
     }
 
     fun onAction(action: SearchAction) {
@@ -612,6 +616,7 @@ class SearchViewModel(
                     runCatching {
                         shareManager.shareText("https://github-store.org/app?repo=${action.repo.fullName}")
                     }.onFailure { t ->
+                        if (t is CancellationException) throw t
                         logger.error("Failed to share link: ${t.message}")
                         _events.send(
                             SearchEvent.OnMessage(getString(Res.string.failed_to_share_link)),
@@ -718,6 +723,8 @@ class SearchViewModel(
                                 )
                             }
                         }
+                    } catch (e: CancellationException) {
+                        throw e
                     } catch (e: Exception) {
                         logger.error("Failed to read clipboard: ${e.message}")
                         _events.send(SearchEvent.OnMessage(getString(Res.string.no_github_link_in_clipboard)))
@@ -917,7 +924,7 @@ class SearchViewModel(
     }
 
     private suspend fun appendExploreResults(
-        newRepos: List<zed.rainxch.core.domain.model.GithubRepoSummary>,
+        newRepos: List<GithubRepoSummary>,
     ) {
         val installedMap =
             installedAppsRepository.getAllInstalledApps().first().groupBy { it.repoId }

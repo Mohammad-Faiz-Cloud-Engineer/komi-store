@@ -2,17 +2,15 @@ package zed.rainxch.apps.presentation
 
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.toImmutableList
-import zed.rainxch.apps.domain.model.GithubRepoInfo
+import zed.rainxch.apps.domain.model.ImportResult
 import zed.rainxch.apps.presentation.model.AppItem
 import zed.rainxch.apps.presentation.model.AppSortRule
 import zed.rainxch.apps.presentation.model.DeviceAppUi
 import zed.rainxch.apps.presentation.model.GithubAssetUi
 import zed.rainxch.apps.presentation.model.GithubRepoInfoUi
 import zed.rainxch.apps.presentation.model.InstalledAppUi
+import zed.rainxch.apps.presentation.model.LinkStep
 import zed.rainxch.apps.presentation.model.UpdateAllProgress
-import zed.rainxch.core.domain.model.DeviceApp
-import zed.rainxch.core.domain.model.GithubAsset
 import zed.rainxch.core.domain.system.RepoMatchSuggestion
 
 data class AppsState(
@@ -74,7 +72,7 @@ data class AppsState(
 
     val isExporting: Boolean = false,
     val isImporting: Boolean = false,
-    val importSummary: zed.rainxch.apps.domain.model.ImportResult? = null,
+    val importSummary: ImportResult? = null,
 
     val appPendingUninstall: InstalledAppUi? = null,
 
@@ -88,42 +86,10 @@ data class AppsState(
     val linkSourceHost: String? = null,
 
     val twoPaneSelectedPackage: String? = null,
-) {
-    val filteredDeviceApps: ImmutableList<DeviceAppUi>
-        get() {
-            val searched =
-                if (deviceAppSearchQuery.isBlank()) {
-                    deviceApps
-                } else {
-                    deviceApps.filter {
-                        it.appName.contains(deviceAppSearchQuery, ignoreCase = true) ||
-                            it.packageName.contains(deviceAppSearchQuery, ignoreCase = true)
-                    }
-                }
-            return searched
-                .sortedWith(
-                    compareBy<DeviceAppUi> { it.installerCategory.sortPriority }
-                        .thenBy { it.appName.lowercase() }
-                        .thenBy { it.packageName },
-                ).toImmutableList()
-        }
 
-    val filteredLinkAssets: ImmutableList<GithubAssetUi>
-        get() {
-            val raw = linkAssetFilter.trim()
-            if (raw.isEmpty()) return linkInstallableAssets
-            val regex =
-                runCatching { Regex(raw, RegexOption.IGNORE_CASE) }.getOrNull()
-                    ?: return linkInstallableAssets
-            return linkInstallableAssets
-                .filter { regex.containsMatchIn(it.name) }
-                .toImmutableList()
-        }
-}
-
-enum class LinkStep {
-    PickApp,
-    SmartMatch,
-    EnterUrl,
-    PickAsset,
-}
+    val filteredDeviceApps: ImmutableList<DeviceAppUi> = persistentListOf(),
+    val filteredLinkAssets: ImmutableList<GithubAssetUi> = persistentListOf(),
+    val pendingApps: ImmutableList<AppItem> = persistentListOf(),
+    val updateApps: ImmutableList<AppItem> = persistentListOf(),
+    val idleApps: ImmutableList<AppItem> = persistentListOf(),
+)

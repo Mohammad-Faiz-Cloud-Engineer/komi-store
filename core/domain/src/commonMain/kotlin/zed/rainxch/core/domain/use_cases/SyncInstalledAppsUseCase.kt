@@ -1,13 +1,15 @@
 package zed.rainxch.core.domain.use_cases
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import zed.rainxch.core.domain.logging.GitHubStoreLogger
-import zed.rainxch.core.domain.model.InstalledApp
-import zed.rainxch.core.domain.model.Platform
+import zed.rainxch.core.domain.model.installation.InstalledApp
+import zed.rainxch.core.domain.model.system.Platform
 import zed.rainxch.core.domain.repository.InstalledAppsRepository
 import zed.rainxch.core.domain.system.PackageMonitor
+import zed.rainxch.core.domain.utils.executeInTransaction
 
 class SyncInstalledAppsUseCase(
     private val packageMonitor: PackageMonitor,
@@ -68,6 +70,8 @@ class SyncInstalledAppsUseCase(
                         try {
                             installedAppsRepository.deleteInstalledApp(packageName)
                             logger.info("Removed uninstalled app: $packageName")
+                        } catch (e: CancellationException) {
+                            throw e
                         } catch (e: Exception) {
                             logger.error("Failed to delete $packageName: ${e.message}")
                         }
@@ -77,6 +81,8 @@ class SyncInstalledAppsUseCase(
                         try {
                             installedAppsRepository.deleteInstalledApp(packageName)
                             logger.info("Removed stale pending install (>24h): $packageName")
+                        } catch (e: CancellationException) {
+                            throw e
                         } catch (e: Exception) {
                             logger.error("Failed to delete stale pending $packageName: ${e.message}")
                         }
@@ -110,6 +116,8 @@ class SyncInstalledAppsUseCase(
                                 packageName = app.packageName,
                                 path = null,
                             )
+                        } catch (e: CancellationException) {
+                            throw e
                         } catch (e: Exception) {
                             logger.error("Failed to resolve pending ${app.packageName}: ${e.message}")
                         }
@@ -124,6 +132,8 @@ class SyncInstalledAppsUseCase(
                             logger.info(
                                 "Cleared stale parked-file metadata for already-installed ${app.packageName}",
                             )
+                        } catch (e: CancellationException) {
+                            throw e
                         } catch (e: Exception) {
                             logger.error(
                                 "Failed to clear stale parked-file for ${app.packageName}: ${e.message}",
@@ -148,6 +158,8 @@ class SyncInstalledAppsUseCase(
                                 "Migrated $packageName: ${migrationResult.source} " +
                                     "(versionName=${migrationResult.versionName}, code=${migrationResult.versionCode})",
                             )
+                        } catch (e: CancellationException) {
+                            throw e
                         } catch (e: Exception) {
                             logger.error("Failed to migrate $packageName: ${e.message}")
                         }
@@ -178,6 +190,8 @@ class SyncInstalledAppsUseCase(
                                         "updateAvailable=$isUpdateAvailable",
                                 )
                             }
+                        } catch (e: CancellationException) {
+                            throw e
                         } catch (e: Exception) {
                             logger.error("Failed to sync version for ${app.packageName}: ${e.message}")
                         }
@@ -192,6 +206,8 @@ class SyncInstalledAppsUseCase(
                 )
 
                 Result.success(Unit)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 logger.error("Sync failed: ${e.message}")
                 Result.failure(e)
@@ -227,12 +243,4 @@ class SyncInstalledAppsUseCase(
         val versionCode: Long,
         val source: String,
     )
-}
-
-suspend fun executeInTransaction(block: suspend () -> Unit) {
-    try {
-        block()
-    } catch (e: Exception) {
-        throw e
-    }
 }

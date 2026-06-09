@@ -1,5 +1,6 @@
 package zed.rainxch.core.data.repository
 
+import kotlinx.coroutines.CancellationException
 import co.touchlab.kermit.Logger
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
@@ -22,7 +23,7 @@ import zed.rainxch.core.data.dto.UserProfileNetwork
 import zed.rainxch.core.data.mappers.toUserProfile
 import zed.rainxch.core.data.network.executeRequest
 import zed.rainxch.core.domain.logging.GitHubStoreLogger
-import zed.rainxch.core.domain.model.UserProfile
+import zed.rainxch.core.domain.model.account.UserProfile
 import zed.rainxch.core.domain.repository.UserSessionRepository
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -80,6 +81,8 @@ class UserSessionRepositoryImpl(
             cacheManager.put(CACHE_KEY, userProfile, USER_PROFILE)
             logger.debug("Fetched and cached user profile: ${userProfile.username}")
             emit(userProfile)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logger.error("Failed to fetch user profile: ${e.message}")
 

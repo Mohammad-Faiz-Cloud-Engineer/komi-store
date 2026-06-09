@@ -28,7 +28,7 @@ import zed.rainxch.core.domain.system.MultiSourceDownloader
 import zed.rainxch.core.domain.system.OrchestratedDownload
 import zed.rainxch.core.domain.system.PendingInstallNotifier
 import zed.rainxch.core.domain.system.SystemInstallSerializer
-import zed.rainxch.core.domain.util.AssetFileName
+import zed.rainxch.core.domain.utils.AssetFileName
 import kotlin.random.Random
 
 class DefaultDownloadOrchestrator(
@@ -97,26 +97,25 @@ class DefaultDownloadOrchestrator(
             _downloads.update { it + (spec.packageName to initial) }
         }
 
-        val job =
-            appScope.launch {
-                try {
-                    runDownload(spec)
-                } catch (e: CancellationException) {
-                    Logger.d { "Orchestrator: download cancelled for ${spec.packageName}" }
-                    throw e
-                } catch (t: Throwable) {
-                    Logger.e(t) { "Orchestrator: download/install failed for ${spec.packageName}" }
-                    markFailed(spec.packageName, t.message)
-                } finally {
-                    stateMutex.withLock {
-                        if (activeJobs[spec.packageName]?.isCompleted == true ||
-                            activeJobs[spec.packageName] == null
-                        ) {
-                            activeJobs.remove(spec.packageName)
-                        }
+        val job = appScope.launch {
+            try {
+                runDownload(spec)
+            } catch (e: CancellationException) {
+                Logger.d { "Orchestrator: download cancelled for ${spec.packageName}" }
+                throw e
+            } catch (t: Throwable) {
+                Logger.e(t) { "Orchestrator: download/install failed for ${spec.packageName}" }
+                markFailed(spec.packageName, t.message)
+            } finally {
+                stateMutex.withLock {
+                    if (activeJobs[spec.packageName]?.isCompleted == true ||
+                        activeJobs[spec.packageName] == null
+                    ) {
+                        activeJobs.remove(spec.packageName)
                     }
                 }
             }
+        }
         stateMutex.withLock {
             activeJobs[spec.packageName] = job
         }
@@ -371,6 +370,8 @@ class DefaultDownloadOrchestrator(
                 }
                 try {
                     pendingInstallNotifier.clearPending(packageName)
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     Logger.w(e) { "Orchestrator: failed to clear notification on cancel" }
                 }

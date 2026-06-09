@@ -1,5 +1,6 @@
 package zed.rainxch.apps.presentation.components
 
+import zed.rainxch.core.presentation.utils.formatFileSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -40,7 +41,7 @@ import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.stringResource
 import zed.rainxch.apps.presentation.AppsAction
 import zed.rainxch.apps.presentation.AppsState
-import zed.rainxch.core.domain.util.AssetVariant
+import zed.rainxch.core.domain.utils.AssetVariant
 import zed.rainxch.githubstore.core.presentation.res.*
 
 @Composable
@@ -60,7 +61,9 @@ fun VariantPickerDialog(
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                 )
+
                 Spacer(Modifier.height(2.dp))
+
                 Text(
                     text = app.appName,
                     style = MaterialTheme.typography.bodySmall,
@@ -74,6 +77,7 @@ fun VariantPickerDialog(
             Column(modifier = Modifier.fillMaxWidth()) {
                 if (app.preferredVariantStale) {
                     StaleVariantBanner(currentVariant = state.variantPickerCurrentVariant)
+
                     Spacer(Modifier.height(12.dp))
                 }
 
@@ -146,7 +150,6 @@ fun VariantPickerDialog(
             }
         },
         confirmButton = {
-
             GhsButton(
                 onClick = {
                     onAction(AppsAction.OnDismissVariantPicker)
@@ -156,6 +159,7 @@ fun VariantPickerDialog(
                 variant = GhsButtonVariant.Text,
                 size = GhsButtonSize.Sm,
             )
+
             GhsButton(
                 onClick = { onAction(AppsAction.OnDismissVariantPicker) },
                 label = stringResource(Res.string.cancel),
@@ -186,7 +190,9 @@ private fun StaleVariantBanner(
             tint = MaterialTheme.colorScheme.onErrorContainer,
             modifier = Modifier.size(20.dp),
         )
+
         Spacer(Modifier.width(10.dp))
+
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = stringResource(Res.string.variant_picker_stale_title),
@@ -194,6 +200,7 @@ private fun StaleVariantBanner(
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onErrorContainer,
             )
+
             if (currentVariant != null) {
                 Text(
                     text = stringResource(Res.string.variant_picker_stale_was, currentVariant),
@@ -218,7 +225,6 @@ private fun VariantOptionList(
             .heightIn(min = 0.dp, max = 280.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
-
         item {
             VariantRow(
                 isSelected = current == null,
@@ -227,20 +233,20 @@ private fun VariantOptionList(
                 leadingIcon = Icons.Default.AutoAwesome,
                 onClick = onResetAuto,
             )
+
             HorizontalDivider(
                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
             )
         }
 
         items(state.variantPickerOptions, key = { it.id }) { asset ->
-
             val variant = AssetVariant.extract(asset.name)
             if (variant.isNullOrEmpty()) return@items
             val isCurrent = variant.equals(current, ignoreCase = true)
             VariantRow(
                 isSelected = isCurrent,
                 title = variant,
-                subtitle = asset.name + "  ·  " + formatBytes(asset.size),
+                subtitle = asset.name + "  ·  " + formatFileSize(asset.size),
                 onClick = { onPick(variant) },
             )
         }
@@ -277,7 +283,9 @@ private fun VariantRow(
                 },
             modifier = Modifier.size(20.dp),
         )
+
         Spacer(Modifier.width(12.dp))
+
         if (leadingIcon != null) {
             Icon(
                 imageVector = leadingIcon,
@@ -285,16 +293,20 @@ private fun VariantRow(
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(18.dp),
             )
+
             Spacer(Modifier.width(8.dp))
         }
+
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodySmall,
@@ -303,6 +315,7 @@ private fun VariantRow(
                 overflow = TextOverflow.Ellipsis,
             )
         }
+
         if (isSelected) {
             Icon(
                 imageVector = Icons.Default.CheckCircle,
@@ -314,10 +327,3 @@ private fun VariantRow(
     }
 }
 
-private fun formatBytes(bytes: Long): String =
-    when {
-        bytes >= 1_073_741_824 -> "%.1f GB".format(bytes / 1_073_741_824.0)
-        bytes >= 1_048_576 -> "%.1f MB".format(bytes / 1_048_576.0)
-        bytes >= 1_024 -> "%.1f KB".format(bytes / 1_024.0)
-        else -> "$bytes B"
-    }

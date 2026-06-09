@@ -1,5 +1,6 @@
 package zed.rainxch.apps.presentation.components
 
+import zed.rainxch.core.presentation.utils.formatFileSize
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -47,14 +48,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import kotlinx.collections.immutable.ImmutableList
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import zed.rainxch.apps.presentation.AppsAction
 import zed.rainxch.apps.presentation.AppsState
-import zed.rainxch.apps.presentation.LinkStep
 import zed.rainxch.apps.presentation.model.DeviceAppUi
+import zed.rainxch.apps.presentation.model.LinkStep
 import zed.rainxch.apps.presentation.model.GithubAssetUi
-import zed.rainxch.core.domain.model.InstallerCategory
+import zed.rainxch.core.domain.model.installation.InstallerCategory
 import zed.rainxch.core.domain.system.RepoMatchSource
 import zed.rainxch.core.domain.system.RepoMatchSuggestion
 import zed.rainxch.githubstore.core.presentation.res.*
@@ -138,7 +140,7 @@ fun LinkAppBottomSheet(
 
 @Composable
 private fun PickAppStep(
-    deviceApps: List<DeviceAppUi>,
+    deviceApps: ImmutableList<DeviceAppUi>,
     searchQuery: String,
     onSearchChange: (String) -> Unit,
     onAppSelected: (DeviceAppUi) -> Unit,
@@ -151,6 +153,7 @@ private fun PickAppStep(
         Text(
             text = stringResource(Res.string.link_app_title),
             style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.Bold,
         )
 
@@ -188,6 +191,7 @@ private fun PickAppStep(
                     app = app,
                     onClick = { onAppSelected(app) },
                 )
+
                 HorizontalDivider(
                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
                 )
@@ -233,13 +237,17 @@ private fun DeviceAppItem(
             Text(
                 text = app.appName,
                 style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Medium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+
             Row(verticalAlignment = Alignment.CenterVertically) {
                 InstallerCategoryChip(app.installerCategory)
+
                 Spacer(Modifier.width(6.dp))
+
                 Text(
                     text = app.packageName,
                     style = MaterialTheme.typography.bodySmall,
@@ -308,7 +316,7 @@ private fun InstallerCategoryChip(category: InstallerCategory) {
 private fun SmartMatchStep(
     selectedApp: DeviceAppUi?,
     loading: Boolean,
-    suggestions: List<RepoMatchSuggestion>,
+    suggestions: ImmutableList<RepoMatchSuggestion>,
     error: String?,
     isValidating: Boolean,
     validationStatus: String?,
@@ -333,9 +341,11 @@ private fun SmartMatchStep(
                     contentDescription = null,
                 )
             }
+
             Text(
                 text = stringResource(Res.string.link_smart_search_title),
                 style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -349,11 +359,13 @@ private fun SmartMatchStep(
             Text(
                 text = selectedApp.appName,
                 style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.fillMaxWidth(),
             )
+
             Text(
                 text = selectedApp.packageName,
                 style = MaterialTheme.typography.bodySmall,
@@ -379,7 +391,9 @@ private fun SmartMatchStep(
                         modifier = Modifier.size(20.dp),
                         strokeWidth = 2.dp,
                     )
+
                     Spacer(Modifier.width(12.dp))
+
                     Text(
                         text = stringResource(Res.string.link_smart_search_searching),
                         style = MaterialTheme.typography.bodyMedium,
@@ -400,7 +414,9 @@ private fun SmartMatchStep(
                         modifier = Modifier.size(20.dp),
                         strokeWidth = 2.dp,
                     )
+
                     Spacer(Modifier.width(12.dp))
+
                     Text(
                         text = validationStatus ?: stringResource(Res.string.validating_repo),
                         style = MaterialTheme.typography.bodyMedium,
@@ -415,7 +431,9 @@ private fun SmartMatchStep(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.error,
                 )
+
                 Spacer(Modifier.height(8.dp))
+
                 GhsButton(
                     onClick = onRetry,
                     label = stringResource(Res.string.retry),
@@ -453,6 +471,7 @@ private fun SmartMatchStep(
                                 )
                             },
                         )
+
                         HorizontalDivider(
                             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
                         )
@@ -489,6 +508,7 @@ private fun SuggestionRow(
             Text(
                 text = "${suggestion.owner}/${suggestion.repo}",
                 style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Medium,
                 maxLines = 1,
                 softWrap = false,
@@ -506,19 +526,25 @@ private fun SuggestionRow(
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
-            Row(verticalAlignment = Alignment.CenterVertically) {
 
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 HostBadge(suggestion.sourceHost)
+
                 Spacer(Modifier.width(6.dp))
+
                 MatchSourceChip(suggestion.source)
+
                 Spacer(Modifier.width(6.dp))
+
                 Text(
                     text = "${(suggestion.confidence * 100).toInt()}%",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+
                 suggestion.stars?.let { stars ->
                     Spacer(Modifier.width(8.dp))
+
                     Text(
                         text = "★ $stars",
                         style = MaterialTheme.typography.labelSmall,
@@ -623,6 +649,7 @@ private fun EnterUrlStep(
             Text(
                 text = stringResource(Res.string.link_app_title),
                 style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold,
             )
         }
@@ -641,14 +668,17 @@ private fun EnterUrlStep(
                     Text(
                         text = selectedApp.appName,
                         style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.SemiBold,
                     )
+
                     Text(
                         text = selectedApp.packageName,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+
                 selectedApp.versionName?.let {
                     Text(
                         text = it,
@@ -689,6 +719,7 @@ private fun EnterUrlStep(
 
         if (isValidating && validationStatus != null) {
             Spacer(Modifier.height(8.dp))
+
             Text(
                 text = validationStatus,
                 style = MaterialTheme.typography.bodySmall,
@@ -701,8 +732,8 @@ private fun EnterUrlStep(
 
 @Composable
 private fun PickAssetStep(
-    allAssets: List<GithubAssetUi>,
-    visibleAssets: List<GithubAssetUi>,
+    allAssets: ImmutableList<GithubAssetUi>,
+    visibleAssets: ImmutableList<GithubAssetUi>,
     selectedAsset: GithubAssetUi?,
     downloadProgress: Int?,
     validationStatus: String?,
@@ -736,6 +767,7 @@ private fun PickAssetStep(
             Text(
                 text = stringResource(Res.string.select_asset_title),
                 style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold,
             )
         }
@@ -790,14 +822,17 @@ private fun PickAssetStep(
                 Text(
                     text = stringResource(Res.string.fallback_older_releases_title),
                     style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Medium,
                 )
+
                 Text(
                     text = stringResource(Res.string.fallback_older_releases_description),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+
             Switch(
                 checked = fallbackEnabled,
                 onCheckedChange = onFallbackToggled,
@@ -839,10 +874,12 @@ private fun PickAssetStep(
                         Text(
                             text = asset.name,
                             style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                         )
+
                         Text(
                             text = formatFileSize(asset.size),
                             style = MaterialTheme.typography.bodySmall,
@@ -852,12 +889,15 @@ private fun PickAssetStep(
 
                     if (isSelected && downloadProgress != null) {
                         Spacer(Modifier.width(8.dp))
+
                         CircularProgressIndicator(
                             progress = { downloadProgress / 100f },
                             modifier = Modifier.size(24.dp),
                             strokeWidth = 2.dp,
                         )
+
                         Spacer(Modifier.width(4.dp))
+
                         Text(
                             text = "$downloadProgress%",
                             style = MaterialTheme.typography.labelSmall,
@@ -873,7 +913,6 @@ private fun PickAssetStep(
 
             if (visibleAssets.isEmpty()) {
                 item {
-
                     val (message, isError) = when {
                         allAssets.isEmpty() ->
                             stringResource(Res.string.asset_none_available) to false
@@ -923,10 +962,3 @@ private fun PickAssetStep(
     }
 }
 
-private fun formatFileSize(bytes: Long): String =
-    when {
-        bytes >= 1_073_741_824 -> "%.1f GB".format(bytes / 1_073_741_824.0)
-        bytes >= 1_048_576 -> "%.1f MB".format(bytes / 1_048_576.0)
-        bytes >= 1_024 -> "%.1f KB".format(bytes / 1_024.0)
-        else -> "$bytes B"
-    }

@@ -19,10 +19,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
 import zed.rainxch.core.domain.getPlatform
-import zed.rainxch.core.domain.model.Platform
-import zed.rainxch.core.domain.model.ProxyConfig
-import zed.rainxch.core.domain.model.ProxyScope
-import zed.rainxch.core.domain.model.TranslationProvider
+import zed.rainxch.core.domain.model.system.Platform
+import zed.rainxch.core.domain.model.settings.ProxyConfig
+import zed.rainxch.core.domain.model.settings.ProxyScope
+import zed.rainxch.core.domain.model.settings.TranslationProvider
 import zed.rainxch.core.domain.network.ProxyTestOutcome
 import zed.rainxch.core.domain.logging.GitHubStoreLogger
 import zed.rainxch.core.domain.network.ProxyTester
@@ -131,14 +131,13 @@ class TweaksViewModel(
 
     private fun refreshCacheSize() {
         if (cacheSizeJob?.isActive == true) return
-        cacheSizeJob =
-            viewModelScope.launch {
-                cacheRepository.observeCacheSize().collect { sizeBytes ->
-                    _state.update {
-                        it.copy(cacheSize = formatCacheSize(sizeBytes))
-                    }
+        cacheSizeJob = viewModelScope.launch {
+            cacheRepository.observeCacheSize().collect { sizeBytes ->
+                _state.update {
+                    it.copy(cacheSize = formatCacheSize(sizeBytes))
                 }
             }
+        }
     }
 
     private fun formatCacheSize(bytes: Long): String {
@@ -328,7 +327,7 @@ class TweaksViewModel(
     }
 
     private fun persistInstallerAttribution(
-        attribution: zed.rainxch.core.domain.model.InstallerAttribution,
+        attribution: zed.rainxch.core.domain.model.installation.InstallerAttribution,
     ) {
         viewModelScope.launch {
             runCatching {
@@ -341,6 +340,7 @@ class TweaksViewModel(
                     )
                 }
             }.onFailure { error ->
+                if (error is CancellationException) throw error
                 logger.error("TweaksViewModel: failed to persist installer attribution", error)
                 _state.update {
                     it.copy(installerAttributionCustomError = "write_failed")
@@ -357,8 +357,8 @@ class TweaksViewModel(
                 }
                 .collect { attribution ->
                     _state.update { current ->
-                        val isCustom = attribution is zed.rainxch.core.domain.model.InstallerAttribution.Custom
-                        val customDraft = (attribution as? zed.rainxch.core.domain.model.InstallerAttribution.Custom)?.packageName
+                        val isCustom = attribution is zed.rainxch.core.domain.model.installation.InstallerAttribution.Custom
+                        val customDraft = (attribution as? zed.rainxch.core.domain.model.installation.InstallerAttribution.Custom)?.packageName
                             ?: current.installerAttributionCustomDraft
                         current.copy(
                             installerAttribution = attribution,
@@ -483,6 +483,7 @@ class TweaksViewModel(
                         tweaksRepository.getBatteryOptimizationPromptDismissed().firstOrNull()
                     }
                 }.onFailure { error ->
+                    if (error is CancellationException) throw error
                     logger.error(
                         "TweaksViewModel: failed to read battery-opt dismissed flag",
                         error,
@@ -595,6 +596,7 @@ class TweaksViewModel(
                             clearDirty(action.scope)
                             _events.send(TweaksEvent.OnProxySaved)
                         }.onFailure { error ->
+                            if (error is CancellationException) throw error
                             _events.send(
                                 TweaksEvent.OnProxySaveError(
                                     error.message ?: getString(Res.string.failed_to_save_proxy_settings),
@@ -681,6 +683,7 @@ class TweaksViewModel(
                         clearDirty(action.scope)
                         _events.send(TweaksEvent.OnProxySaved)
                     }.onFailure { error ->
+                        if (error is CancellationException) throw error
                         _events.send(
                             TweaksEvent.OnProxySaveError(
                                 error.message ?: getString(Res.string.failed_to_save_proxy_settings),
@@ -731,13 +734,13 @@ class TweaksViewModel(
 
             TweaksAction.OnInstallerAttributionSystemDefault -> {
                 persistInstallerAttribution(
-                    zed.rainxch.core.domain.model.InstallerAttribution.SystemDefault,
+                    zed.rainxch.core.domain.model.installation.InstallerAttribution.SystemDefault,
                 )
             }
 
             is TweaksAction.OnInstallerAttributionPresetSelected -> {
                 persistInstallerAttribution(
-                    zed.rainxch.core.domain.model.InstallerAttribution.Preset(action.key),
+                    zed.rainxch.core.domain.model.installation.InstallerAttribution.Preset(action.key),
                 )
             }
 
@@ -761,7 +764,7 @@ class TweaksViewModel(
 
             TweaksAction.OnInstallerAttributionCustomSave -> {
                 val draft = _state.value.installerAttributionCustomDraft.trim()
-                if (!zed.rainxch.core.domain.model.InstallerAttributionDefaults.isValidPackageName(draft)) {
+                if (!zed.rainxch.core.domain.model.installation.InstallerAttributionDefaults.isValidPackageName(draft)) {
                     _state.update {
                         it.copy(installerAttributionCustomError = "invalid")
                     }
@@ -769,11 +772,12 @@ class TweaksViewModel(
                     viewModelScope.launch {
                         runCatching {
                             tweaksRepository.setInstallerAttribution(
-                                zed.rainxch.core.domain.model.InstallerAttribution.Custom(draft),
+                                zed.rainxch.core.domain.model.installation.InstallerAttribution.Custom(draft),
                             )
                         }.onSuccess {
                             _state.update { it.copy(installerAttributionCustomError = null) }
                         }.onFailure { error ->
+                            if (error is CancellationException) throw error
                             logger.error("TweaksViewModel: failed to persist installer attribution", error)
                             _state.update { it.copy(installerAttributionCustomError = "write_failed") }
                         }
@@ -851,6 +855,7 @@ class TweaksViewModel(
                         refreshCacheSize()
                         _events.send(TweaksEvent.OnCacheCleared)
                     }.onFailure { error ->
+                        if (error is CancellationException) throw error
                         _events.send(
                             TweaksEvent.OnCacheClearError(
                                 error.message ?: getString(Res.string.tweaks_clear_downloads_failed),
@@ -1078,7 +1083,7 @@ class TweaksViewModel(
                     tweaksRepository.setAppLanguage(action.tag)
                     runCatching {
                         tweaksRepository.addRestartReason(
-                            zed.rainxch.core.domain.model.RestartReason.LANGUAGE,
+                            zed.rainxch.core.domain.model.system.RestartReason.LANGUAGE,
                         )
                     }
                     if (getPlatform() != Platform.ANDROID) {
@@ -1111,6 +1116,7 @@ class TweaksViewModel(
                     runCatching {
                         tweaksRepository.setBatteryOptimizationPromptDismissed(true)
                     }.onFailure {
+                        if (it is CancellationException) throw it
                         logger.error(
                             "TweaksViewModel: failed to persist battery-opt dismiss",
                             it,
@@ -1234,6 +1240,7 @@ class TweaksViewModel(
                             }
                             _events.send(TweaksEvent.OnProxySaved)
                         }.onFailure { error ->
+                            if (error is CancellationException) throw error
                             _events.send(
                                 TweaksEvent.OnProxySaveError(
                                     error.message
@@ -1295,6 +1302,7 @@ class TweaksViewModel(
                         }
                         _events.send(TweaksEvent.OnProxySaved)
                     }.onFailure { error ->
+                        if (error is CancellationException) throw error
                         _events.send(
                             TweaksEvent.OnProxySaveError(
                                 error.message
@@ -1376,6 +1384,7 @@ class TweaksViewModel(
                             }
                         }
                     }.onFailure { error ->
+                        if (error is CancellationException) throw error
                         _events.send(
                             TweaksEvent.OnProxySaveError(
                                 error.message

@@ -17,6 +17,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.stringResource
 import zed.rainxch.apps.presentation.model.AppItem
+import zed.rainxch.apps.presentation.model.CompactStatusFlags
 import zed.rainxch.githubstore.core.presentation.res.Res
 import zed.rainxch.githubstore.core.presentation.res.apps_compact_status_filter_active
 import zed.rainxch.githubstore.core.presentation.res.apps_compact_status_pending_install
@@ -25,16 +26,6 @@ import zed.rainxch.githubstore.core.presentation.res.apps_compact_status_ready_t
 import zed.rainxch.githubstore.core.presentation.res.apps_compact_status_updates_ignored
 import zed.rainxch.githubstore.core.presentation.res.apps_compact_status_variant_pinned
 import zed.rainxch.githubstore.core.presentation.res.apps_compact_status_variant_stale
-
-data class CompactStatusFlags(
-    val filterActive: Boolean = false,
-    val variantPinned: Boolean = false,
-    val variantStale: Boolean = false,
-    val preReleaseOn: Boolean = false,
-    val pendingInstall: Boolean = false,
-    val readyToInstall: Boolean = false,
-    val updatesIgnored: Boolean = false,
-)
 
 @Composable
 fun rememberCompactStatusFlags(appItem: AppItem): CompactStatusFlags {
@@ -66,16 +57,16 @@ fun StatusDotCluster(
     flags: CompactStatusFlags,
     modifier: Modifier = Modifier,
 ) {
-    val cs = MaterialTheme.colorScheme
+    val colorScheme = MaterialTheme.colorScheme
 
     val items = buildList {
-        if (flags.readyToInstall) add(StatusItem(DotShape.Ring, cs.primary))
-        if (flags.pendingInstall) add(StatusItem(DotShape.Chevron, cs.tertiary))
-        if (flags.variantStale) add(StatusItem(DotShape.Triangle, cs.error))
-        if (flags.variantPinned) add(StatusItem(DotShape.Diamond, cs.primary))
-        if (flags.filterActive) add(StatusItem(DotShape.Square, cs.primary))
-        if (flags.preReleaseOn) add(StatusItem(DotShape.Circle, cs.tertiary))
-        if (flags.updatesIgnored) add(StatusItem(DotShape.Bar, cs.outline))
+        if (flags.readyToInstall) add(StatusItem(DotShape.Ring, colorScheme.primary))
+        if (flags.pendingInstall) add(StatusItem(DotShape.Chevron, colorScheme.tertiary))
+        if (flags.variantStale) add(StatusItem(DotShape.Triangle, colorScheme.error))
+        if (flags.variantPinned) add(StatusItem(DotShape.Diamond, colorScheme.primary))
+        if (flags.filterActive) add(StatusItem(DotShape.Square, colorScheme.primary))
+        if (flags.preReleaseOn) add(StatusItem(DotShape.Circle, colorScheme.tertiary))
+        if (flags.updatesIgnored) add(StatusItem(DotShape.Bar, colorScheme.outline))
     }
 
     if (items.isEmpty()) return

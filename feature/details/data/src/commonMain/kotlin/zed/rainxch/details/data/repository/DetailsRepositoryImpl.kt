@@ -36,12 +36,13 @@ import zed.rainxch.core.data.network.GitHubClientProvider
 import zed.rainxch.core.data.network.executeRequest
 import zed.rainxch.core.data.services.LocalizationManager
 import zed.rainxch.core.domain.logging.GitHubStoreLogger
-import zed.rainxch.core.domain.model.GithubRelease
-import zed.rainxch.core.domain.model.GithubRepoSummary
-import zed.rainxch.core.domain.model.GithubUser
-import zed.rainxch.core.domain.model.GithubUserProfile
-import zed.rainxch.core.domain.model.RefreshError
-import zed.rainxch.core.domain.model.RefreshException
+import zed.rainxch.core.domain.model.account.github.GithubRelease
+import zed.rainxch.core.domain.model.account.github.GithubRepoSummary
+import zed.rainxch.core.domain.model.account.github.GithubUser
+import zed.rainxch.core.domain.model.account.github.GithubUserProfile
+import zed.rainxch.core.domain.model.error.RefreshError
+import zed.rainxch.core.domain.model.error.RefreshException
+import zed.rainxch.core.domain.utils.RepoIdCodec
 import zed.rainxch.details.data.utils.ReadmeLocalizationHelper
 import zed.rainxch.details.data.utils.preprocessMarkdown
 import zed.rainxch.details.domain.model.RepoStats
@@ -61,7 +62,7 @@ class DetailsRepositoryImpl(
     private fun zed.rainxch.core.data.dto.ForgejoRepoNetworkModel.toForgejoSummary(
         sourceHost: String,
     ): GithubRepoSummary = GithubRepoSummary(
-        id = zed.rainxch.core.domain.util.RepoIdCodec.encode(sourceHost, id),
+        id = RepoIdCodec.encode(sourceHost, id),
         name = name,
         fullName = fullName ?: "${owner.login}/$name",
         owner = GithubUser(
@@ -138,6 +139,8 @@ class DetailsRepositoryImpl(
                     .toGithubRepoSummary()
             cacheManager.put(cacheKey, result, REPO_DETAILS)
             result
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             cacheManager.getStale<GithubRepoSummary>(cacheKey)?.let { stale ->
                 logger.debug("Network error, using stale cache for repo id=$id")
@@ -193,6 +196,8 @@ class DetailsRepositoryImpl(
 
             cacheManager.put(cacheKey, result, REPO_DETAILS)
             result
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             cacheManager.getStale<GithubRepoSummary>(cacheKey)?.let { stale ->
                 logger.debug("Network error, using stale cache for $owner/$name")
@@ -280,6 +285,8 @@ class DetailsRepositoryImpl(
 
             cacheManager.put(cacheKey, result, RELEASES)
             result
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             cacheManager.getStale<GithubRelease>(cacheKey)?.let { stale ->
                 logger.debug("Network error, using stale cache for latest release $owner/$repo")
@@ -365,6 +372,8 @@ class DetailsRepositoryImpl(
                 logger.debug("Serving stale cache for releases $owner/$repo after parse failure")
                 return stale
             }
+            throw e
+        } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             cacheManager.getStale<List<GithubRelease>>(cacheKey)?.let { stale ->
@@ -499,6 +508,8 @@ class DetailsRepositoryImpl(
                 logger.error("Failed to fetch README.md for $owner/$repo")
                 null
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Throwable) {
             logger.error("Failed to fetch README.md: ${e.message}")
             null
@@ -566,6 +577,8 @@ class DetailsRepositoryImpl(
 
             cacheManager.put(cacheKey, result, REPO_STATS)
             result
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             cacheManager.getStale<RepoStats>(cacheKey)?.let { stale ->
                 logger.debug("Network error, using stale cache for stats $owner/$repo")
@@ -614,6 +627,8 @@ class DetailsRepositoryImpl(
             val result = user.toDomainProfile()
             cacheManager.put(cacheKey, result, USER_PROFILE)
             result
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             cacheManager.getStale<GithubUserProfile>(cacheKey)?.let { stale ->
                 logger.debug("Network error, using stale cache for profile $username")
@@ -653,6 +668,8 @@ class DetailsRepositoryImpl(
                 .toForgejoSummary(sourceHost)
             cacheManager.put(cacheKey, result, REPO_DETAILS)
             result
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             cacheManager.getStale<GithubRepoSummary>(cacheKey)?.let { return it }
             throw e
@@ -681,6 +698,8 @@ class DetailsRepositoryImpl(
                 .sortedByDescending { it.publishedAt }
             if (result.isNotEmpty()) cacheManager.put(cacheKey, result, RELEASES)
             result
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             cacheManager.getStale<List<GithubRelease>>(cacheKey)?.let { return it }
             throw e
@@ -776,6 +795,8 @@ class DetailsRepositoryImpl(
             )
             cacheManager.put(cacheKey, result, REPO_STATS)
             result
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             cacheManager.getStale<RepoStats>(cacheKey)?.let { return it }
             throw e
@@ -835,6 +856,8 @@ class DetailsRepositoryImpl(
         } else {
             try {
                 getForgejoAllReleases(owner, repo, sourceHost)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 logger.debug("Forgejo downloads sum: releases fetch failed: ${e.message}")
                 return 0L
@@ -859,6 +882,8 @@ class DetailsRepositoryImpl(
                         }
                     }.getOrNull()
             response != null && response.attestations.isNotEmpty()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logger.debug("Attestation check failed for $owner/$repo: ${e.message}")
             false

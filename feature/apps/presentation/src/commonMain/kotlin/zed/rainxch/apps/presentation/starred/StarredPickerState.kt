@@ -15,6 +15,9 @@ data class StarredPickerState(
     val isAuthenticated: Boolean = true,
     val errorMessage: String? = null,
     val rateLimited: Boolean = false,
+    val apkCount: Int = 0,
+    val trackedCount: Int = 0,
+    val visibleCandidates: ImmutableList<StarredCandidateUi> = persistentListOf(),
 ) {
     enum class Phase {
         LoadingStars,
@@ -22,23 +25,4 @@ data class StarredPickerState(
         Ready,
         Empty,
     }
-}
-
-data class StarredCandidateUi(
-    val repoId: Long,
-    val owner: String,
-    val name: String,
-    val ownerAvatarUrl: String,
-    val description: String?,
-    val stargazersCount: Int,
-    val starredAt: Long?,
-    val hasApkRelease: Boolean,
-    val isAlreadyTracked: Boolean,
-    val latestReleaseTag: String?,
-)
-
-enum class StarredPickerSortRule {
-    RecentlyStarred,
-    Alphabetical,
-    MostStars,
 }

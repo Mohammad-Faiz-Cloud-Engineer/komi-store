@@ -5,7 +5,7 @@ import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.request.get
 import io.ktor.client.statement.HttpResponse
 import io.ktor.util.network.UnresolvedAddressException
-import zed.rainxch.core.domain.model.ProxyConfig
+import zed.rainxch.core.domain.model.settings.ProxyConfig
 import zed.rainxch.core.domain.network.ProxyTestOutcome
 import zed.rainxch.core.domain.network.ProxyTester
 import java.io.IOException
@@ -59,6 +59,8 @@ class ProxyTesterImpl : ProxyTester {
             ProxyTestOutcome.Failure.ProxyUnreachable
         } catch (e: IOException) {
             ProxyTestOutcome.Failure.Unknown(e.message)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             ProxyTestOutcome.Failure.Unknown(e.message)
         } finally {

@@ -21,17 +21,17 @@ import zed.rainxch.core.data.mappers.toDomain
 import zed.rainxch.core.data.mappers.toEntity
 import zed.rainxch.core.data.network.GitHubClientProvider
 import zed.rainxch.core.data.network.executeRequest
-import zed.rainxch.core.domain.model.GithubAsset
-import zed.rainxch.core.domain.model.GithubRelease
-import zed.rainxch.core.domain.model.InstallSource
-import zed.rainxch.core.domain.model.InstalledApp
-import zed.rainxch.core.domain.model.MatchingPreview
+import zed.rainxch.core.domain.model.account.github.GithubAsset
+import zed.rainxch.core.domain.model.account.github.GithubRelease
+import zed.rainxch.core.domain.model.installation.InstallSource
+import zed.rainxch.core.domain.model.installation.InstalledApp
+import zed.rainxch.core.domain.model.smart_detect.MatchingPreview
 import zed.rainxch.core.domain.repository.InstalledAppsRepository
 import zed.rainxch.core.domain.system.Installer
-import zed.rainxch.core.domain.model.isEffectivelyPreRelease
-import zed.rainxch.core.domain.util.AssetFilter
-import zed.rainxch.core.domain.util.AssetVariant
-import zed.rainxch.core.domain.util.VersionMath
+import zed.rainxch.core.domain.model.account.github.isEffectivelyPreRelease
+import zed.rainxch.core.domain.utils.AssetFilter
+import zed.rainxch.core.domain.utils.AssetVariant
+import zed.rainxch.core.domain.utils.VersionMath
 
 class InstalledAppsRepositoryImpl(
     private val database: AppDatabase,
@@ -385,6 +385,8 @@ class InstalledAppsRepositoryImpl(
             }
 
             return isUpdateAvailable
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Logger.e { "Failed to check updates for $packageName: ${e.message}" }
             installedAppsDao.updateLastChecked(packageName, System.currentTimeMillis())
@@ -399,6 +401,8 @@ class InstalledAppsRepositoryImpl(
             if (app.updateCheckEnabled) {
                 try {
                     checkForUpdates(app.packageName)
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     Logger.w { "Failed to check updates for ${app.packageName}: ${e.message}" }
                 }

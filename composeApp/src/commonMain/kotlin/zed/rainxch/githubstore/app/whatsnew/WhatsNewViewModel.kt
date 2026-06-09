@@ -3,6 +3,7 @@ package zed.rainxch.githubstore.app.whatsnew
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -10,7 +11,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import zed.rainxch.core.domain.model.WhatsNewEntry
+import zed.rainxch.core.domain.model.announcement.WhatsNewEntry
 import zed.rainxch.core.domain.repository.TweaksRepository
 import zed.rainxch.core.domain.repository.WhatsNewLoader
 import zed.rainxch.core.domain.system.AppVersionInfo
@@ -46,6 +47,8 @@ class WhatsNewViewModel(
                         reloadHistory(tag)
                         reloadPending(tag)
                     }
+            } catch (e: CancellationException) {
+                throw e
             } catch (t: Throwable) {
                 logger.e(t) { "Failed to observe app-language for what's-new reloads" }
             }
@@ -57,6 +60,8 @@ class WhatsNewViewModel(
             val entries = whatsNewLoader.loadAll(languageTag)
             _historyEntries.value = entries
             _hasHistory.value = entries.size > 1
+        } catch (e: CancellationException) {
+            throw e
         } catch (t: Throwable) {
             logger.e(t) { "Failed to load what's-new history" }
         }
@@ -65,6 +70,8 @@ class WhatsNewViewModel(
     private suspend fun reloadPending(languageTag: String?) {
         try {
             evaluate(languageTag)
+        } catch (e: CancellationException) {
+            throw e
         } catch (t: Throwable) {
             logger.e(t) { "Failed to evaluate what's-new state" }
         }
@@ -91,6 +98,8 @@ class WhatsNewViewModel(
         viewModelScope.launch {
             try {
                 tweaksRepository.setLastSeenWhatsNewVersionCode(entry.versionCode)
+            } catch (e: CancellationException) {
+                throw e
             } catch (t: Throwable) {
                 logger.e(t) { "Failed to persist lastSeenWhatsNewVersionCode=${entry.versionCode}" }
             }
@@ -107,6 +116,8 @@ class WhatsNewViewModel(
                         ?: whatsNewLoader.loadAll(tag).firstOrNull()
                         ?: return@launch
                 _pendingEntry.value = entry
+            } catch (e: CancellationException) {
+                throw e
             } catch (t: Throwable) {
                 logger.e(t) { "Failed to force-show latest what's-new entry" }
             }

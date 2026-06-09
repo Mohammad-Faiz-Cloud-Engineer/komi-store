@@ -3,16 +3,19 @@ package zed.rainxch.apps.presentation.starred
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import zed.rainxch.apps.domain.repository.AppsRepository
-import zed.rainxch.core.domain.model.RateLimitException
+import zed.rainxch.core.domain.model.error.RateLimitException
 import zed.rainxch.core.domain.repository.UserSessionRepository
 import zed.rainxch.core.domain.repository.InstalledAppsRepository
 import zed.rainxch.core.domain.repository.StarredRepository
@@ -25,7 +28,34 @@ class StarredPickerViewModel(
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(StarredPickerState())
-    val state = _state.asStateFlow()
+    val state = _state
+        .map { it.withDerived() }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000L),
+            initialValue = StarredPickerState(),
+        )
+
+    private fun StarredPickerState.withDerived(): StarredPickerState {
+        val query = searchQuery.trim().lowercase()
+        val filtered = candidates.filter { candidate ->
+            if (!showWithoutApk && !candidate.hasApkRelease) return@filter false
+            if (query.isBlank()) return@filter true
+            candidate.owner.lowercase().contains(query) ||
+                candidate.name.lowercase().contains(query) ||
+                (candidate.description?.lowercase()?.contains(query) == true)
+        }
+        val sorted = when (sortRule) {
+            StarredPickerSortRule.RecentlyStarred -> filtered.sortedByDescending { it.starredAt ?: 0L }
+            StarredPickerSortRule.Alphabetical -> filtered.sortedBy { "${it.owner}/${it.name}".lowercase() }
+            StarredPickerSortRule.MostStars -> filtered.sortedByDescending { it.stargazersCount }
+        }
+        return copy(
+            apkCount = candidates.count { it.hasApkRelease },
+            trackedCount = candidates.count { it.isAlreadyTracked },
+            visibleCandidates = sorted.toImmutableList(),
+        )
+    }
 
     private val _events = Channel<StarredPickerEvent>(capacity = Channel.BUFFERED)
     val events = _events.receiveAsFlow()
@@ -181,6 +211,8 @@ class StarredPickerViewModel(
                     it.copy(rateLimited = true, errorMessage = e.message)
                 }
                 return
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 println(
                     "StarredPicker: latest-release scan failed for ${candidate.owner}/${candidate.name}: " +

@@ -1,10 +1,8 @@
 package zed.rainxch.githubstore.app.onboarding
 
 import androidx.compose.runtime.Stable
-import zed.rainxch.core.domain.model.AppTheme
-import zed.rainxch.core.domain.model.ThemeMode
-
-enum class OnboardingStep { PALETTE, SIGN_IN, PERMISSIONS }
+import zed.rainxch.core.domain.model.appearance.AppTheme
+import zed.rainxch.core.domain.model.appearance.ThemeMode
 
 @Stable
 data class OnboardingState(

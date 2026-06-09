@@ -1,17 +1,17 @@
 package zed.rainxch.apps.data.repository
 
+import kotlinx.coroutines.CancellationException
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.parameter
 import io.ktor.http.HttpHeaders
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import zed.rainxch.apps.domain.model.GithubRepoInfo
 import zed.rainxch.apps.domain.model.ImportFormat
@@ -19,8 +19,7 @@ import zed.rainxch.apps.domain.model.ImportResult
 import zed.rainxch.apps.domain.repository.AppsRepository
 import zed.rainxch.core.data.mappers.toExportedAppOrSkip
 import zed.rainxch.core.data.mappers.toObtainiumApp
-import zed.rainxch.core.domain.model.ObtainiumApp
-import zed.rainxch.core.domain.model.ObtainiumExport
+import zed.rainxch.core.domain.model.transfer.ObtainiumExport
 import zed.rainxch.core.data.dto.GithubRepoNetworkModel
 import zed.rainxch.core.data.dto.ReleaseNetwork
 import zed.rainxch.core.data.mappers.toDomain
@@ -29,20 +28,20 @@ import zed.rainxch.core.data.network.GitHubClientProvider
 import zed.rainxch.core.data.network.executeRequest
 import zed.rainxch.core.data.network.shouldFallbackToGithubOrRethrow
 import zed.rainxch.core.domain.logging.GitHubStoreLogger
-import zed.rainxch.core.domain.model.DeviceApp
-import zed.rainxch.core.domain.util.VersionMath
-import zed.rainxch.core.domain.model.ExportedApp
-import zed.rainxch.core.domain.model.ExportedAppList
-import zed.rainxch.core.domain.model.GithubRelease
-import zed.rainxch.core.domain.model.InstallSource
-import zed.rainxch.core.domain.model.isEffectivelyPreRelease
-import zed.rainxch.core.domain.model.InstalledApp
-import zed.rainxch.core.domain.model.RateLimitException
+import zed.rainxch.core.domain.model.installation.DeviceApp
+import zed.rainxch.core.domain.utils.VersionMath
+import zed.rainxch.core.domain.model.transfer.ExportedApp
+import zed.rainxch.core.domain.model.transfer.ExportedAppList
+import zed.rainxch.core.domain.model.account.github.GithubRelease
+import zed.rainxch.core.domain.model.installation.InstallSource
+import zed.rainxch.core.domain.model.account.github.isEffectivelyPreRelease
+import zed.rainxch.core.domain.model.installation.InstalledApp
+import zed.rainxch.core.domain.model.error.RateLimitException
 import zed.rainxch.core.domain.repository.InstalledAppsRepository
 import zed.rainxch.core.domain.repository.TweaksRepository
 import zed.rainxch.core.domain.system.PackageMonitor
-import zed.rainxch.core.domain.util.AssetVariant
-import zed.rainxch.core.domain.utils.AppLauncher
+import zed.rainxch.core.domain.utils.AssetVariant
+import zed.rainxch.core.domain.helpers.AppLauncher
 import kotlin.time.Clock
 
 class AppsRepositoryImpl(
@@ -120,6 +119,8 @@ class AppsRepositoryImpl(
                 ?.toDomain()
         } catch (e: RateLimitException) {
             throw e
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logger.error("Failed to fetch latest release for $owner/$repo: ${e.message}")
             null
@@ -193,6 +194,8 @@ class AppsRepositoryImpl(
             )
         } catch (e: RateLimitException) {
             throw e
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logger.error("Failed to fetch repo info for $owner/$repo: ${e.message}")
             null
@@ -235,6 +238,8 @@ class AppsRepositoryImpl(
                 .filter { includePreReleases || it.prerelease != true }
                 .maxByOrNull { it.publishedAt ?: it.createdAt ?: "" }
                 ?.tagName
+        } catch (e: CancellationException) {
+            throw e
         } catch (_: Exception) {
             null
         }
@@ -478,9 +483,9 @@ class AppsRepositoryImpl(
             imported = imported.size,
             skipped = skipped.size,
             failed = failed.size,
-            importedItems = imported,
-            skippedItems = skipped,
-            failedItems = failed,
+            importedItems = imported.toImmutableList(),
+            skippedItems = skipped.toImmutableList(),
+            failedItems = failed.toImmutableList(),
             sourceFormat = ImportFormat.NATIVE,
         )
     }
@@ -550,10 +555,10 @@ class AppsRepositoryImpl(
             skipped = skipped.size,
             failed = failed.size,
             nonGitHubSkipped = nonGitHub.size,
-            importedItems = imported,
-            skippedItems = skipped,
-            nonGitHubItems = nonGitHub,
-            failedItems = failed,
+            importedItems = imported.toImmutableList(),
+            skippedItems = skipped.toImmutableList(),
+            nonGitHubItems = nonGitHub.toImmutableList(),
+            failedItems = failed.toImmutableList(),
             sourceFormat = ImportFormat.OBTAINIUM,
         )
     }
@@ -595,7 +600,7 @@ class AppsRepositoryImpl(
             val repoModel = client.getRepository(owner, repo).getOrNull() ?: return null
             val latestTag = client.getLatestRelease(owner, repo).getOrNull()?.tagName
             GithubRepoInfo(
-                id = zed.rainxch.core.domain.util.RepoIdCodec.encode(host, repoModel.id),
+                id = zed.rainxch.core.domain.utils.RepoIdCodec.encode(host, repoModel.id),
                 name = repoModel.name,
                 owner = repoModel.owner.login,
                 ownerAvatarUrl = repoModel.owner.avatarUrl,

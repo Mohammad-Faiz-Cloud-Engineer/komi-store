@@ -44,7 +44,7 @@ import zed.rainxch.core.data.dto.MirrorListResponse
 import zed.rainxch.core.data.dto.ReleaseNetwork
 import zed.rainxch.core.data.dto.SigningFingerprintSeedResponse
 import zed.rainxch.core.data.dto.UserProfileNetwork
-import zed.rainxch.core.domain.model.ProxyConfig
+import zed.rainxch.core.domain.model.settings.ProxyConfig
 import kotlin.coroutines.cancellation.CancellationException
 
 class BackendApiClient(
@@ -438,26 +438,3 @@ class BackendApiClient(
         private const val DEFAULT_REFRESH_COOLDOWN_SECONDS = 30L
     }
 }
-
-class BackendException(
-    val statusCode: Int,
-    message: String = "HTTP $statusCode",
-) : Exception(message)
-
-class RateLimitedException(
-    val retryAfterSeconds: Long? = null,
-    val resetEpochSeconds: Long? = null,
-    val limit: Int? = null,
-) : Exception("Rate limited by backend (429)")
-
-class RefreshCooldownException(
-    val retryAfterSeconds: Long,
-) : Exception("Refresh cooldown ($retryAfterSeconds s)")
-
-class RefreshBudgetExhaustedException(
-    val retryAfterSeconds: Long,
-) : Exception("Refresh budget exhausted ($retryAfterSeconds s)")
-
-class RepoNotFoundException : Exception("Repository not found")
-
-class RepoArchivedException : Exception("Repository archived")

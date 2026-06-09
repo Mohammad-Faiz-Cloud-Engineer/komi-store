@@ -1,8 +1,8 @@
 package zed.rainxch.tweaks.presentation.mirror
 
 import org.jetbrains.compose.resources.StringResource
-import zed.rainxch.core.domain.model.MirrorConfig
-import zed.rainxch.core.domain.model.MirrorPreference
+import zed.rainxch.core.domain.model.mirror.MirrorConfig
+import zed.rainxch.core.domain.model.mirror.MirrorPreference
 
 data class MirrorPickerState(
     val mirrors: List<MirrorConfig> = emptyList(),
@@ -14,15 +14,3 @@ data class MirrorPickerState(
     val testResult: TestResult? = null,
     val isRefreshing: Boolean = false,
 )
-
-sealed interface TestResult {
-    data class Success(val latencyMs: Long) : TestResult
-
-    data class HttpError(val code: Int) : TestResult
-
-    data object Timeout : TestResult
-
-    data object DnsFailure : TestResult
-
-    data class Other(val message: String) : TestResult
-}

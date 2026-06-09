@@ -29,6 +29,7 @@ import kotlin.math.roundToInt
 import org.jetbrains.compose.resources.stringResource
 import zed.rainxch.apps.presentation.import.model.RepoSuggestionUi
 import zed.rainxch.apps.presentation.import.model.SuggestionSource
+import zed.rainxch.core.presentation.utils.formatCompactCount
 import zed.rainxch.githubstore.core.presentation.res.Res
 import zed.rainxch.githubstore.core.presentation.res.external_import_card_owner_byline
 import zed.rainxch.githubstore.core.presentation.res.external_import_match_confidence_a11y
@@ -71,6 +72,7 @@ fun RepoCandidateRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -89,6 +91,7 @@ fun RepoCandidateRow(
 
                 SuggestionHostChip(suggestion.sourceHost)
             }
+
             if (!suggestion.description.isNullOrBlank()) {
                 Text(
                     text = suggestion.description,
@@ -98,6 +101,7 @@ fun RepoCandidateRow(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
+
             if (suggestion.stars != null) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
@@ -106,9 +110,11 @@ fun RepoCandidateRow(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(12.dp),
                     )
+
                     Spacer(Modifier.width(4.dp))
+
                     Text(
-                        text = formatStars(suggestion.stars),
+                        text = formatCompactCount(suggestion.stars),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -137,13 +143,6 @@ fun RepoCandidateRow(
         }
     }
 }
-
-private fun formatStars(stars: Int): String =
-    when {
-        stars >= 1_000_000 -> "${(stars / 100_000) / 10.0}M"
-        stars >= 1_000 -> "${(stars / 100) / 10.0}k"
-        else -> stars.toString()
-    }
 
 @Composable
 private fun SuggestionHostChip(sourceHost: String?) {

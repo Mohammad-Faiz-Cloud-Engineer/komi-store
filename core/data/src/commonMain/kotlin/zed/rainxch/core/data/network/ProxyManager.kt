@@ -12,17 +12,13 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import zed.rainxch.core.domain.model.MirrorPreference
-import zed.rainxch.core.domain.model.ProxyConfig
-import zed.rainxch.core.domain.model.ProxyScope
-import zed.rainxch.core.domain.model.TrafficKind
+import zed.rainxch.core.domain.model.mirror.MirrorPreference
+import zed.rainxch.core.domain.model.settings.ProxyConfig
+import zed.rainxch.core.domain.model.settings.ProxyScope
+import zed.rainxch.core.domain.model.mirror.TrafficKind
 import zed.rainxch.core.domain.repository.MirrorRepository
 import zed.rainxch.core.domain.repository.ProxyRepository
 
-data class MirrorActive(
-    val template: String,
-    val trafficKinds: Set<TrafficKind>,
-)
 
 object ProxyManager {
     private val flows: Map<ProxyScope, MutableStateFlow<ProxyConfig>> =
@@ -71,32 +67,31 @@ object ProxyManager {
         scope: CoroutineScope,
     ) {
         if (mirrorCollectorJob?.isActive == true) return
-        mirrorCollectorJob =
-            scope.launch {
-                combine(
-                    repository.observePreference(),
-                    repository.observeCatalog(),
-                ) { pref, catalog ->
-                    when (pref) {
-                        MirrorPreference.Direct -> null
-                        is MirrorPreference.Custom ->
-                            MirrorActive(
-                                template = pref.template,
-                                trafficKinds = setOf(TrafficKind.RELEASE_ASSET, TrafficKind.RAW_FILE),
-                            )
-                        is MirrorPreference.Selected -> {
-                            val cfg = catalog.firstOrNull { it.id == pref.id }
-                            val template = cfg?.urlTemplate
-                            if (cfg == null || template == null) {
-                                null
-                            } else {
-                                MirrorActive(template = template, trafficKinds = cfg.trafficKinds)
-                            }
+        mirrorCollectorJob = scope.launch {
+            combine(
+                repository.observePreference(),
+                repository.observeCatalog(),
+            ) { pref, catalog ->
+                when (pref) {
+                    MirrorPreference.Direct -> null
+                    is MirrorPreference.Custom ->
+                        MirrorActive(
+                            template = pref.template,
+                            trafficKinds = setOf(TrafficKind.RELEASE_ASSET, TrafficKind.RAW_FILE),
+                        )
+                    is MirrorPreference.Selected -> {
+                        val cfg = catalog.firstOrNull { it.id == pref.id }
+                        val template = cfg?.urlTemplate
+                        if (cfg == null || template == null) {
+                            null
+                        } else {
+                            MirrorActive(template = template, trafficKinds = cfg.trafficKinds)
                         }
                     }
-                }.collect { active ->
-                    mirror.set(active)
                 }
+            }.collect { active ->
+                mirror.set(active)
             }
+        }
     }
 }

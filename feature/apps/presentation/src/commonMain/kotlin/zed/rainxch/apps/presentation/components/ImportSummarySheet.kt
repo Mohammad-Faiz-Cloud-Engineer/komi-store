@@ -46,6 +46,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import kotlinx.collections.immutable.ImmutableList
 import org.jetbrains.compose.resources.stringResource
 import zed.rainxch.apps.domain.model.ImportFormat
 import zed.rainxch.apps.domain.model.ImportResult
@@ -98,6 +99,7 @@ fun ImportSummarySheet(
             Text(
                 text = stringResource(Res.string.import_summary_title, formatLabel),
                 style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.SemiBold,
             )
 
@@ -113,6 +115,8 @@ fun ImportSummarySheet(
                 .joinToString(", ")
             Text(
                 text = "",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier
                     .height(0.dp)
                     .semantics {
@@ -124,7 +128,6 @@ fun ImportSummarySheet(
             SummaryBucket(
                 icon = Icons.Outlined.CheckCircle,
                 tint = MaterialTheme.colorScheme.primary,
-                count = summary.imported,
                 title = stringResource(Res.string.import_summary_imported, summary.imported),
                 items = summary.importedItems,
             )
@@ -133,7 +136,6 @@ fun ImportSummarySheet(
                 SummaryBucket(
                     icon = Icons.Outlined.RemoveCircleOutline,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    count = summary.skipped,
                     title = stringResource(Res.string.import_summary_already_tracked, summary.skipped),
                     items = summary.skippedItems,
                 )
@@ -143,7 +145,6 @@ fun ImportSummarySheet(
                 SummaryBucket(
                     icon = Icons.Outlined.WarningAmber,
                     tint = MaterialTheme.colorScheme.tertiary,
-                    count = summary.nonGitHubSkipped,
                     title = stringResource(Res.string.import_summary_non_github, summary.nonGitHubSkipped),
                     caption = stringResource(Res.string.import_summary_non_github_caption),
                     items = summary.nonGitHubItems,
@@ -154,7 +155,6 @@ fun ImportSummarySheet(
                 SummaryBucket(
                     icon = Icons.Outlined.ErrorOutline,
                     tint = MaterialTheme.colorScheme.error,
-                    count = summary.failed,
                     title = stringResource(Res.string.import_summary_failed, summary.failed),
                     items = summary.failedItems,
                 )
@@ -196,18 +196,23 @@ private fun UnknownFormatSheet(
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.tertiary,
                 )
+
                 Spacer(Modifier.width(8.dp))
+
                 Text(
                     text = stringResource(Res.string.import_summary_unknown_format),
                     style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.SemiBold,
                 )
             }
+
             Text(
                 text = stringResource(Res.string.import_summary_unknown_caption),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+
             if (!preview.isNullOrBlank()) {
                 SelectionContainer {
                     Text(
@@ -221,12 +226,14 @@ private fun UnknownFormatSheet(
                     )
                 }
             }
+
             GhsButton(
                 onClick = onDismiss,
                 label = stringResource(Res.string.import_summary_close),
                 variant = GhsButtonVariant.Primary,
                 modifier = Modifier.fillMaxWidth(),
             )
+
             Spacer(Modifier.height(8.dp))
         }
     }
@@ -236,10 +243,9 @@ private fun UnknownFormatSheet(
 private fun SummaryBucket(
     icon: ImageVector,
     tint: Color,
-    count: Int,
     title: String,
     caption: String? = null,
-    items: List<String>,
+    items: ImmutableList<String>,
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -249,13 +255,17 @@ private fun SummaryBucket(
             modifier = Modifier.fillMaxWidth(),
         ) {
             Icon(imageVector = icon, contentDescription = null, tint = tint)
+
             Spacer(Modifier.width(8.dp))
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Medium,
                 )
+
                 if (!caption.isNullOrBlank()) {
                     Text(
                         text = caption,
@@ -264,6 +274,7 @@ private fun SummaryBucket(
                     )
                 }
             }
+
             if (items.isNotEmpty()) {
                 val expandLabel = stringResource(
                     if (expanded) Res.string.import_summary_collapse else Res.string.import_summary_expand,
@@ -279,6 +290,7 @@ private fun SummaryBucket(
 
         if (expanded && items.isNotEmpty()) {
             HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
