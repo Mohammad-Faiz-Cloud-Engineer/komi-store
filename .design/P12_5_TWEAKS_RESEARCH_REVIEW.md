@@ -39,7 +39,7 @@ The bigger issue is in §4.3, Card 1 step 4: *"`Test` … runs `OnProxyTest` aga
 
 **Proposed fix.**
 
-1. **Persist the master concept as its own ProxyConfig record** in `ProxyRepository`, plus a `useMaster: Boolean` per scope. Don't derive it from equality. (Yes, this is a schema change — that's the cost of the chosen IA. §7.4 lists "ProxyRepository schema" as untouched; that decision should be reversed.)
+1. **Option A chosen — master config + per-scope `useMaster` booleans** in `ProxyRepository`. The master is stored as a regular `ProxyConfig` under `MasterKeys` (`master_proxy_type`, `master_proxy_host`, etc.), and each scope gets a boolean key (`discovery_proxy_use_master`, etc.). This approach was chosen over Option B (new `ProxyConfig.Master` sealed variant) because: (a) reuses the existing `parseConfig()` function and `writeMasterConfig()` storage path without duplication, (b) the `MasterKeys` object already provides the storage structure, and (c) the `migrateMasterV2IfNeeded()` migration already writes `useMaster` booleans — no new migration needed. Don't derive master from equality comparison.
 2. **Test must announce the scope.** Card 1 test button label: "Test main connection". Per-scope override test: "Test for Downloads". Snackbar should always include scope name: "Downloads proxy connected in 184 ms."
 3. **When master is selected, run the test against all 3 endpoints** (search/metadata GitHub API, download CDN, configured translation provider) and show a 3-line result. This is what Tailscale's `tailscale netcheck` does. Roundtrip cost is acceptable — testing is rare.
 4. Surface "current state" pill on every override sub-row even when collapsed: green "Using main", or amber "Override: HTTP 127.0.0.1:1080".
@@ -198,10 +198,10 @@ Bonus: a segment makes the "override is on" state visually obvious without subti
 
 **Proposed fix.**
 
-1. Confirm `ProxyConfig.Socks` is SOCKS5-only (spec it explicitly: rename mode pill "SOCKS5" rather than "SOCKS"). If SOCKS4 is needed, add a sub-toggle.
-2. Confirm "HTTP" actually supports HTTPS proxies (it likely does via JVM `Proxy.Type.HTTP` which serves both). If yes, rename the pill "HTTP/HTTPS" or just leave "HTTP" with a tooltip.
-3. Add a "Paste proxy URL" affordance: a small text-button below the form fields ("Paste full URL"). On click, opens a modal with one paste field that parses `scheme://user:pass@host:port` and populates the form. Don't replace the form; supplement it.
-4. **PAC file**: spec it as an explicit non-goal for v1 with a one-line follow-up ticket, or commit to a Mode pill 5: "PAC URL". Don't leave it ambiguous — users will ask.
+1. **SOCKS5-only confirmed.** `ProxyConfig.Socks` stays versionless — JVM `SocksSocketImpl` is SOCKS5 by default, and there's no demand for SOCKS4. The paste parser (`parseProxyUrl()`) accepts `socks4`, `socks5`, `socks5h` but all map to `ProxyType.SOCKS` → `ProxyConfig.Socks`. Info loss on socks4 paste is accepted as a negligible edge case. UI pill label keeps "SOCKS" (not "SOCKS5") for brevity.
+2. **HTTP confirmed for both HTTP and HTTPS.** JVM `Proxy.Type.HTTP` handles both protocols transparently. UI label stays "HTTP" — the caption explains the mode; tooltip not needed.
+3. **Paste URL already implemented.** `PasteProxyUrlSheet` (`connection/PasteProxyUrlSheet.kt`) exists with `parseProxyUrl()` that handles `http`, `https`, `socks`, `socks4`, `socks5`, `socks5h` schemes. Wired in `TweaksConnectionRoot.kt` — the "Paste URL" text button opens the sheet, parses the input, and dispatches `OnMasterProxyPasteUrl`.
+4. **PAC file: explicit non-goal for v1.** No code exists. If issues come up, address as a follow-up (separate ticket). Not adding a Mode pill for it.
 
 **Severity.** Major (will generate GitHub issues within a week of release if not addressed).
 
@@ -282,7 +282,7 @@ But: §3.4 Custom forges row has a trailing `IconButton` for delete ("Trailing: 
 1. Mandate `pluralStringResource` for any subtitle / label with a count, and add plural XML for every locale that doesn't have it. Audit: %d tokens, %d hosts, %d apps (skipped updates count).
 2. Spec subtitle truncation behavior: *"Truncate with ellipsis. If subtitle has multiple dot-separated tokens, prefer truncating the rightmost token first."* (This is hard in Compose; pragmatic compromise: cap subtitle at ~32 chars in any locale, drop secondary token if over.)
 3. Use a locale-aware separator: `LocalConfiguration.current.locales` → CJK locales use 「· 」(with width adjustment) or " / "; non-CJK uses " · ".
-4. Wrap all hub rows in `CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr)` only for the chevron icon — text content respects user direction.
+4. Chevron auto-flips via `Icons.AutoMirrored.Filled.KeyboardArrowRight` (already used in `GhsEntryRow.kt`). No `CompositionLocalProvider` wrapping needed — text respects user direction automatically, and the mirrored icon handles the arrow flip in RTL locales.
 5. **Translator handoff**: the §6 rename table is English-only. Generate a CSV of "old key → new English → context note" for translators per locale. Don't ship the redesign with stale 12 locales (the user's policy elsewhere ships with English first and queues translations; that's acceptable, but it must be explicit in the spec, not implicit).
 
 **Severity.** Major (13 locales is a load-bearing project property).
